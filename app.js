@@ -95,10 +95,8 @@ function assertWebGLSupport() {
 function createRenderer() {
   const canvas = document.getElementById('scene');
   if (!canvas) throw new Error('The scene canvas is missing.');
-  const test = document.createElement('canvas');
-  const gl = test.getContext('webgl2') || test.getContext('webgl');
-  if (!gl) throw new Error('WebGL is unavailable or disabled in this browser.');
-
+  // boot() runs assertWebGLSupport() before this function. Avoid creating a
+  // second throwaway WebGL context on mobile devices with strict context caps.
   const instance = new THREE.WebGLRenderer({
     canvas,
     antialias: true,
