@@ -38,6 +38,15 @@ The official page currently shows a June 2026 possession date, which has passed 
 
 ## Added runtime rendering modules
 
+The immersive interaction modules are local source files rather than external services:
+
+- `js/guided-tour.js` — authored exterior stops, pause/resume and next-stop progression for Director's Cut.
+- `js/lighting-controller.js` — conceptual time-of-day transitions, including evening window/lobby emission.
+- `js/facade-inspector.js` — raycast-based feature selection and temporary geometric annotation.
+- `js/blueprint-controller.js` — reversible edge-only rendering over the same model geometry, restoring the original mesh materials and visibility.
+- `js/camera-director.js` — camera path, presets, intro timing and interaction handoff.
+
+
 The immersive feature branch vendors the optional post-processing modules directly from the official Three.js repository at the `r164` release/tag, matching the locally bundled runtime engine:
 
 - Upstream repository: https://github.com/mrdoob/three.js
