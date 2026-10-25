@@ -68,7 +68,7 @@ export class FacadeInspector {
         return;
       }
       const info = this._describe(hit);
-      this._setOutline(hit.object);
+      this._setOutline(hit);
       this.onSelect(info);
     };
     this._onPointerCancel = () => {
@@ -145,11 +145,19 @@ export class FacadeInspector {
     };
   }
 
-  _setOutline(object) {
+  _setOutline(hit) {
     this._clearOutline();
+    const object = hit?.object;
     if (!object?.geometry) return;
     try {
       const geometry = new THREE.EdgesGeometry(object.geometry, 28);
+      if (object.isInstancedMesh && Number.isInteger(hit.instanceId)) {
+        const instanceMatrix = new THREE.Matrix4();
+        object.getMatrixAt(hit.instanceId, instanceMatrix);
+        geometry.applyMatrix4(instanceMatrix);
+      }
+      object.updateMatrixWorld(true);
+      geometry.applyMatrix4(object.matrixWorld);
       const material = new THREE.LineBasicMaterial({
         color: 0xd3b07c,
         transparent: true,
@@ -158,8 +166,11 @@ export class FacadeInspector {
       });
       const outline = new THREE.LineSegments(geometry, material);
       outline.name = 'Facade inspection highlight';
+      // Vertices are baked to world coordinates above, so the overlay stays at
+      // identity transform. For instanced meshes this outlines the picked
+      // instance, not the source box shared by the entire material batch.
       outline.matrixAutoUpdate = false;
-      outline.matrix.copy(object.matrixWorld);
+      outline.matrix.identity();
       outline.matrixWorldNeedsUpdate = true;
       outline.renderOrder = 999;
       outline.frustumCulled = false;
