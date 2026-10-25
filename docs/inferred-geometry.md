@@ -40,7 +40,7 @@ The exterior references show an elongated multi-wing white/off-white slab, promi
 - Gate, driveway, drop-off, path and landscape arrangement; no surveyed site plan was supplied.
 - Tree species, planting density, distant land forms and contextual surroundings.
 
-The procedural model deliberately uses coherent repeated facade logic to fill the hidden elevations but does not imply that the exact rear rhythm, opening count or rooftop layout has been verified. Roof structures and planted zones are kept conservative and are visual interpretations of the references, not claims about approved amenities.
+The procedural model deliberately uses coherent repeated facade logic to fill the hidden elevations but does not imply that the exact rear rhythm, opening count or rooftop layout has been verified. Roof structures and planted zones are kept conservative and are visual interpretations of the references, not claims about approved amenities. Eligible long upright facade boxes have now been split into estimated storey-height segments for IRIS Inside selection/cutaway behavior; this improves interactivity but remains based on estimated level heights.
 
 ## How to update the model later
 
