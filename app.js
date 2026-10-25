@@ -147,8 +147,30 @@ function setupPostProcessing() {
 }
 
 function renderFrame(deltaSeconds = 0) {
-  if (composer) composer.render(deltaSeconds);
-  else renderer.render(scene, camera);
+  if (composer) {
+    try {
+      composer.render(deltaSeconds);
+      return;
+    } catch (error) {
+      // A shader/post-processing failure must not take down the architectural
+      // viewer. Dispose the optional pipeline and restore direct WebGL render.
+      console.warn('Cinematic rendering failed; returning to the base renderer.', error);
+      try {
+        composer.dispose();
+      } catch (disposeError) {
+        console.warn('Post-processing cleanup was incomplete.', disposeError);
+      }
+      composer = null;
+      bloomPass = null;
+      renderer.setRenderTarget(null);
+      const toggle = document.getElementById('cinematicRenderToggle');
+      if (toggle) {
+        toggle.hidden = true;
+        toggle.setAttribute('aria-pressed', 'false');
+      }
+    }
+  }
+  renderer.render(scene, camera);
 }
 
 function setupScene() {
