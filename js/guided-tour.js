@@ -24,6 +24,7 @@ export class GuidedTour {
     this.onStateChange = onStateChange;
     this.onStep = onStep;
     this.active = false;
+    this.paused = false;
     this.index = -1;
     this.elapsed = 0;
     this.waitingForTransition = false;
@@ -33,6 +34,7 @@ export class GuidedTour {
   start() {
     if (this.active) this.stop({ reason: 'restarted', silent: true });
     this.active = true;
+    this.paused = false;
     this.index = -1;
     this.elapsed = 0;
     this.waitingForTransition = false;
@@ -51,18 +53,47 @@ export class GuidedTour {
     this.current = STOPS[this.index];
     this.elapsed = 0;
     this.waitingForTransition = true;
-    this.onStateChange({
-      active: true,
-      label: this.current.label,
-      step: this.index + 1,
-      total: STOPS.length
-    });
+    this._notifyState();
     this.onStep(this.current, this.index + 1, STOPS.length);
     this.goToPreset(this.current.preset);
   }
 
-  update(deltaSeconds, isTransitioning) {
+  _notifyState(extra = {}) {
     if (!this.active) return;
+    this.onStateChange({
+      active: true,
+      paused: this.paused,
+      label: this.current?.label || 'Guided exterior tour',
+      step: this.index + 1,
+      total: STOPS.length,
+      ...extra
+    });
+  }
+
+  pause() {
+    if (!this.active || this.paused) return;
+    this.paused = true;
+    this._notifyState();
+  }
+
+  resume() {
+    if (!this.active || !this.paused) return;
+    this.paused = false;
+    this._notifyState();
+  }
+
+  togglePause() {
+    if (this.paused) this.resume();
+    else this.pause();
+  }
+
+  next() {
+    if (!this.active) return;
+    this._advance();
+  }
+
+  update(deltaSeconds, isTransitioning) {
+    if (!this.active || this.paused) return;
 
     // Wait until CameraDirector has finished its smooth move before starting
     // the dwell timer. This also handles a preset that requires no transition.
@@ -85,11 +116,12 @@ export class GuidedTour {
   stop({ completed = false, reason = 'manual', silent = false } = {}) {
     if (!this.active) return;
     this.active = false;
+    this.paused = false;
     this.waitingForTransition = false;
     this.elapsed = 0;
     this.current = null;
     if (!silent) {
-      this.onStateChange({ active: false, completed, reason, step: 0, total: STOPS.length });
+      this.onStateChange({ active: false, paused: false, completed, reason, step: 0, total: STOPS.length });
     }
   }
 
