@@ -292,6 +292,7 @@ function configureARButton() {
 
       await renderer.xr.setSession(session);
       session.addEventListener('end', restoreARScene, { once: true });
+      document.body.classList.add('ar-active');
       renderer.setAnimationLoop(animate);
       setLabel('AR active', true);
       ui.showToast('Move your phone to find a surface, then tap to place the miniature.');
@@ -359,6 +360,7 @@ function configureARButton() {
       if (horizon) horizon.group.visible = arPreviousState.horizonVisible;
       arPreviousState = null;
     }
+    document.body.classList.remove('ar-active');
     if (renderer?.xr) renderer.xr.enabled = false;
     if (button) {
       button.disabled = false;
@@ -500,7 +502,7 @@ function setupControllers() {
 }
 
 function setMode(nextMode) {
-  if (!ready) return;
+  if (!ready || renderer?.xr?.isPresenting) return;
   if (guidedTour?.active) guidedTour.stop({ reason: 'manual' });
   const next = nextMode === 'free' ? 'free' : 'orbit';
   if (next === mode) return;
@@ -534,7 +536,7 @@ function setMode(nextMode) {
 }
 
 function goToPreset(name) {
-  if (!ready) return;
+  if (!ready || renderer?.xr?.isPresenting) return;
   if (guidedTour?.active) guidedTour.stop({ reason: 'manual' });
   if (mode === 'free') setMode('orbit');
   if (director.isIntroPlaying) director.skipIntro();
@@ -543,7 +545,7 @@ function goToPreset(name) {
 }
 
 function replayIntro() {
-  if (!ready) return;
+  if (!ready || renderer?.xr?.isPresenting) return;
   if (guidedTour?.active) guidedTour.stop({ reason: 'intro' });
   if (mode === 'free') setMode('orbit');
   if (director.isTransitioning) director.interrupt();
@@ -556,7 +558,7 @@ function skipIntro() {
 }
 
 function toggleFacadeInspection() {
-  if (!ready || !facadeInspector) return;
+  if (!ready || !facadeInspector || renderer?.xr?.isPresenting) return;
   if (mode === 'free') setMode('orbit');
   if (guidedTour?.active) guidedTour.stop({ reason: 'manual' });
   const active = !facadeInspector.enabled;
@@ -574,7 +576,7 @@ function clearFacadeInspection() {
 }
 
 function toggleGuidedTour() {
-  if (!ready || !guidedTour) return;
+  if (!ready || !guidedTour || renderer?.xr?.isPresenting) return;
   if (guidedTour.active) {
     if (director.isTransitioning) director.interrupt();
     guidedTour.stop({ reason: 'manual' });
