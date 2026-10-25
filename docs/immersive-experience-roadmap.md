@@ -17,7 +17,7 @@
 - Facade inspection uses raycasting against real building meshes, contextual feature descriptions, elevation and approximate-level labels, and a temporary outline.
 - Blueprint view switches the same geometry to architectural edge lines against a restrained technical grid; original mesh visibility and material references are restored on exit.
 - Feature annotations deliberately identify the model as conceptual/inferred, not architect-verified.
-- **IRIS Inside** adds floor selection, floor-aware facade groups, cutaway clipping, an exploded stack, isolated-floor rotation, a furnished illustrative apartment, room picking, an interactive schematic plan, keyboard/touch walk-through controls and a return-to-exterior transition.
+- **IRIS Inside** adds floor selection, floor-aware facade groups, translucent X-ray mode, a draggable selected-floor clipping plane, an exploded stack, isolated-floor rotation, a furnished illustrative apartment with time-responsive warm lights and simple obstacle bounds, room picking, an interactive schematic plan, keyboard/touch walk-through controls and a return-to-exterior transition.
 - No approved floor plan or interior model was supplied. Room locations, interior dimensions and furniture are only an illustrative prototype, and no room area or official apartment configuration is asserted.
 
 **Verification status:** source integration is committed on the feature branch. Floor picking, cutaway rendering, exploded movement, apartment navigation and return-to-exterior require interactive testing in a real WebGL browser. Do not merge until the new IRIS Inside tests in `docs/testing-checklist.md` pass.
