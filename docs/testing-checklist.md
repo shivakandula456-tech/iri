@@ -44,6 +44,10 @@ For all pending rows, record the browser/OS, actual outcome, notes and retest ou
 | R | Cinematic rendering | Local post-processing modules resolve; bloom can be toggled; scene remains visible if composer initialization fails; resizing and adaptive quality keep the composer buffers in sync | Pending — not run on this branch |
 
 | S | Optional WebXR AR | AR action appears only when secure-context capability check succeeds; miniature can be placed/repositioned on hit-tested surface; exit restores original viewer; unsupported/failed sessions leave normal viewer usable | Pending — requires compatible AR device and HTTPS |
+| T | Director's Cut controls | Pause stops tour progression; resume continues; Next stop advances; Skip stops the tour; manual camera input interrupts; step label/progress remains synchronized | Pending — not run on this branch |
+| U | Blueprint-to-Reality | Blueprint hides shaded meshes and draws the same geometry as technical edges; Reality restores original visibility/materials; repeated switching leaves no duplicate overlays or resource growth | Pending — not run on this branch |
+| V | Day-to-night window emission | Warm facade windows and lobby glass gain emission at evening/night and return to a restrained daytime state; no viewer freeze during slider release | Pending — not run on this branch |
+| W | Signature Reveal | Opening begins in sunset palette, title/rule reveal runs, reduced-motion preference simplifies motion, Skip/Replay consistently clears stale classes and restores controls | Pending — not run on this branch |
 
 ## Testing environment limitation
 
@@ -56,15 +60,26 @@ Do not mark this concept acceptance-complete until tests A–S have been run in 
 
 ## Detailed feature tests for the immersive branch
 
-### Guided tour
+### Signature Reveal
+- Replay Intro from 07:00, noon and 20:00; confirm each replay resets to sunset before the camera reveal.
+- Replay with the operating-system reduced-motion preference on and off; confirm prior intro classes do not leak across runs.
+
+### Director's Cut guided tour
 - Start from Home and confirm each stop transitions smoothly.
+- Pause during a stop, confirm tour progression is suspended, then resume and advance with Next stop.
+- Skip while paused or transitioning; the panel must close and camera control must remain available.
 - Start orbiting or zooming during a tour transition and confirm the tour stops without continuing to the next preset.
 - Stop using the tour button, select another preset, switch to Free-look, and replay the intro; each should stop the route immediately.
 
 ### Time-of-day
 - Drag the slider through 07:00, noon, 18:00 and 20:00.
+- Observe facade glazing and lobby glass; evening emission should fade in after dusk and remain restrained in daylight.
 - Confirm the sky changes during the drag and the environment reflection map refreshes after release.
 - Confirm the viewer does not freeze or show a blank frame after the release-triggered environment rebuild.
+
+### Blueprint-to-Reality
+- Toggle Blueprint/Reality several times on front, rear, side and roof views.
+- Confirm the blueprint uses actual tower edges, then restores shaded materials and normal scene interaction without leaving overlays behind.
 
 ### Facade inspection
 - Enable Inspect and click on the front, rear, side, entrance and upper roof surfaces.
