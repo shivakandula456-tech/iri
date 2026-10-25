@@ -413,7 +413,6 @@ export class BuildingExplorer {
     this.interiorLightingHour = nextHour;
     if (this.interiorGlowMaterial) {
       this.interiorGlowMaterial.emissiveIntensity = 0.02 + nightGlow * 1.18;
-      this.interiorGlowMaterial.needsUpdate = true;
     }
     for (const light of this.interiorLights || []) {
       light.intensity = 0.04 + nightGlow * 2.0;
