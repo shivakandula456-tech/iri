@@ -43,8 +43,8 @@ export class BlueprintController {
   _enter() {
     this.lines.length = 0;
     for (const record of this.records) {
+      if (!record.visible) continue;
       const mesh = record.mesh;
-      mesh.visible = false;
       if (!mesh.parent) continue;
       try {
         const geometry = new THREE.EdgesGeometry(mesh.geometry, 24);
@@ -65,7 +65,9 @@ export class BlueprintController {
         lines.frustumCulled = false;
         mesh.parent.add(lines);
         this.lines.push({ object: lines, parent: mesh.parent });
+        mesh.visible = false;
       } catch (error) {
+        mesh.visible = record.visible;
         console.warn('A blueprint edge set could not be created; the original model remains recoverable.', error);
       }
     }
