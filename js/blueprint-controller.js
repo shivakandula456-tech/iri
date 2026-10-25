@@ -55,6 +55,7 @@ export class BlueprintController {
         let bakeToParent = false;
 
         if (mesh.isInstancedMesh) {
+          mesh.updateMatrix();
           // EdgesGeometry represents only one source shape. Expand each real
           // instance transform into a shared line buffer so the blueprint
           // traces the entire facade, not one unit box per material batch.
