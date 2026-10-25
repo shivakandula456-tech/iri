@@ -485,7 +485,7 @@ export function createUI({
       elements.explorerRotateFloor.setAttribute('aria-pressed', String(Boolean(state.rotateEnabled)));
       elements.explorerRotateFloor.classList.toggle('is-active', Boolean(state.rotateEnabled));
       elements.explorerRotateFloor.textContent = state.rotateEnabled ? 'Drag to rotate · On' : 'Rotate floor';
-      elements.explorerRotateFloor.disabled = Boolean(state.walking);
+      elements.explorerRotateFloor.disabled = Boolean(state.walking) || !['floor', 'cutaway', 'exploded'].includes(mode);
       elements.explorerReassemble.hidden = mode !== 'exploded';
       elements.explorerReturnToFloor.hidden = mode !== 'interior';
       elements.explorerRoomSection.hidden = !['cutaway', 'floor', 'interior'].includes(mode);
