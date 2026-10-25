@@ -1,4 +1,4 @@
-import { INTRO_DURATION_MS } from './config.js';
+import { BUILDING, INTRO_DURATION_MS } from './config.js';
 
 const ORBIT_HINT_DESKTOP = 'Drag to orbit · Scroll to zoom · Right-drag to pan';
 const ORBIT_HINT_TOUCH = 'Drag to orbit · Pinch to zoom · Two fingers to pan';
@@ -24,6 +24,16 @@ export function createUI({
   onGuidedSkip = () => {},
   onInspectToggle = () => {},
   onBlueprintToggle = () => {},
+  onExplorerToggle = () => {},
+  onExplorerClose = () => {},
+  onExplorerFloor = () => {},
+  onExplorerMode = () => {},
+  onExplorerEnter = () => {},
+  onExplorerReturnFloor = () => {},
+  onExplorerReassemble = () => {},
+  onExplorerRotate = () => {},
+  onExplorerRoom = () => {},
+  onExplorerWalkDirection = () => {},
   onClearInspection = () => {},
   onSkipIntro = () => {},
   onSheetOpen = () => {},
@@ -56,6 +66,31 @@ export function createUI({
     tourSkipButton: byId('tourSkipButton'),
     blueprintToggle: byId('blueprintToggle'),
     blueprintToggleLabel: byId('blueprintToggleLabel'),
+    exploreFloorsButton: byId('exploreFloorsButton'),
+    exploreFloorsLabel: byId('exploreFloorsLabel'),
+    buildingExplorerPanel: byId('buildingExplorerPanel'),
+    explorerCloseButton: byId('explorerCloseButton'),
+    explorerSelectedFloor: byId('explorerSelectedFloor'),
+    explorerModeLabel: byId('explorerModeLabel'),
+    explorerFloorRail: byId('explorerFloorRail'),
+    explorerExteriorMode: byId('explorerExteriorMode'),
+    explorerCutawayMode: byId('explorerCutawayMode'),
+    explorerFloorMode: byId('explorerFloorMode'),
+    explorerExplodedMode: byId('explorerExplodedMode'),
+    explorerEnterApartment: byId('explorerEnterApartment'),
+    explorerRotateFloor: byId('explorerRotateFloor'),
+    explorerReassemble: byId('explorerReassemble'),
+    explorerReturnToFloor: byId('explorerReturnToFloor'),
+    explorerReturnExterior: byId('explorerReturnExterior'),
+    explorerRoomSection: byId('explorerRoomSection'),
+    explorerPlanFloor: byId('explorerPlanFloor'),
+    explorerPlan: byId('explorerPlan'),
+    explorerRoomList: byId('explorerRoomList'),
+    explorerRoomTitle: byId('explorerRoomTitle'),
+    explorerRoomDescription: byId('explorerRoomDescription'),
+    explorerAccuracy: byId('explorerAccuracy'),
+    explorerWalkControls: byId('explorerWalkControls'),
+    explorerModelNotice: byId('explorerModelNotice'),
     facadeInspectButton: byId('facadeInspectButton'),
     facadeInspectLabel: byId('facadeInspectLabel'),
     facadeInfo: byId('facadeInfo'),
@@ -88,6 +123,10 @@ export function createUI({
 
   const touch = window.matchMedia('(pointer: coarse)').matches;
   const presetButtons = new Map();
+  const explorerFloorButtons = new Map();
+  const explorerRoomButtons = new Map();
+  const explorerPlanButtons = new Map();
+  let explorerRoomsBuilt = false;
   let currentMode = 'orbit';
   let sheetOpen = false;
   let lastFocused = null;
@@ -106,6 +145,47 @@ export function createUI({
     button.addEventListener('click', () => onPreset(name));
     elements.presetRail.appendChild(button);
     presetButtons.set(name, button);
+  }
+
+  // Floor numbers are view controls, not claims about official storey naming.
+  for (let floor = BUILDING.levels; floor >= 1; floor -= 1) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'explorer-floor-button';
+    button.textContent = String(floor);
+    button.dataset.floor = String(floor);
+    button.setAttribute('aria-label', `Select modeled floor ${floor}`);
+    button.setAttribute('aria-pressed', 'false');
+    button.addEventListener('click', () => onExplorerFloor(floor));
+    elements.explorerFloorRail.appendChild(button);
+    explorerFloorButtons.set(floor, button);
+  }
+
+  function buildRoomControls(rooms = []) {
+    if (explorerRoomsBuilt || !Array.isArray(rooms) || !rooms.length) return;
+    for (const room of rooms) {
+      const planButton = document.createElement('button');
+      planButton.type = 'button';
+      planButton.className = `explorer-plan-room plan-room-${room.id}`;
+      planButton.textContent = room.shortLabel || room.label;
+      planButton.dataset.roomId = room.id;
+      planButton.setAttribute('aria-label', `Select ${room.label} on the floor plan`);
+      planButton.setAttribute('aria-pressed', 'false');
+      planButton.addEventListener('click', () => onExplorerRoom(room.id));
+      elements.explorerPlan.appendChild(planButton);
+      explorerPlanButtons.set(room.id, planButton);
+
+      const listButton = document.createElement('button');
+      listButton.type = 'button';
+      listButton.className = 'explorer-room-button';
+      listButton.textContent = room.label;
+      listButton.dataset.roomId = room.id;
+      listButton.setAttribute('aria-pressed', 'false');
+      listButton.addEventListener('click', () => onExplorerRoom(room.id));
+      elements.explorerRoomList.appendChild(listButton);
+      explorerRoomButtons.set(room.id, listButton);
+    }
+    explorerRoomsBuilt = true;
   }
 
   function setMode(mode) {
@@ -294,6 +374,29 @@ export function createUI({
   elements.tourNextButton.addEventListener('click', () => onGuidedNext());
   elements.tourSkipButton.addEventListener('click', () => onGuidedSkip());
   elements.blueprintToggle.addEventListener('click', () => onBlueprintToggle());
+  elements.exploreFloorsButton.addEventListener('click', () => onExplorerToggle());
+  elements.explorerCloseButton.addEventListener('click', () => onExplorerClose());
+  elements.explorerReturnExterior.addEventListener('click', () => onExplorerClose());
+  elements.explorerExteriorMode.addEventListener('click', () => onExplorerMode('exterior'));
+  elements.explorerCutawayMode.addEventListener('click', () => onExplorerMode('cutaway'));
+  elements.explorerFloorMode.addEventListener('click', () => onExplorerMode('floor'));
+  elements.explorerExplodedMode.addEventListener('click', () => onExplorerMode('exploded'));
+  elements.explorerEnterApartment.addEventListener('click', () => onExplorerEnter());
+  elements.explorerReturnToFloor.addEventListener('click', () => onExplorerReturnFloor());
+  elements.explorerReassemble.addEventListener('click', () => onExplorerReassemble());
+  elements.explorerRotateFloor.addEventListener('click', () => onExplorerRotate());
+  elements.explorerWalkControls.querySelectorAll('[data-walk]').forEach((button) => {
+    const direction = button.dataset.walk;
+    const release = () => onExplorerWalkDirection(direction, false);
+    button.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      try { button.setPointerCapture(event.pointerId); } catch { /* optional */ }
+      onExplorerWalkDirection(direction, true);
+    });
+    button.addEventListener('pointerup', release);
+    button.addEventListener('pointercancel', release);
+    button.addEventListener('lostpointercapture', release);
+  });
   elements.facadeInspectButton.addEventListener('click', () => onInspectToggle());
   elements.facadeInfoClose.addEventListener('click', () => onClearInspection());
   elements.aboutButton.addEventListener('click', () => openSheet());
@@ -348,6 +451,61 @@ export function createUI({
       elements.tourPauseButton.setAttribute('aria-pressed', String(paused));
       elements.tourPauseLabel.textContent = paused ? 'Resume' : 'Pause';
       elements.tourPauseButton.title = paused ? 'Resume the guided tour' : 'Pause tour progression';
+    },
+    setExplorerState(state = {}) {
+      buildRoomControls(state.rooms || []);
+      const active = Boolean(state.active);
+      const floor = Number(state.selectedFloor) || 1;
+      const mode = state.mode || 'exterior';
+      const modeLabels = {
+        exterior: 'Exterior highlight', cutaway: 'X-ray cutaway',
+        exploded: 'Exploded tower', floor: 'Isolated floor', interior: 'Inside apartment'
+      };
+      elements.buildingExplorerPanel.hidden = !active;
+      elements.exploreFloorsButton.setAttribute('aria-pressed', String(active));
+      elements.exploreFloorsButton.classList.toggle('is-explorer-active', active);
+      elements.exploreFloorsLabel.textContent = active ? 'IRIS Inside' : 'Explore floors';
+      document.body.classList.toggle('is-building-explorer', active);
+      elements.explorerSelectedFloor.textContent = `Floor ${floor}`;
+      elements.explorerPlanFloor.textContent = `FLOOR ${floor}`;
+      elements.explorerModeLabel.textContent = modeLabels[mode] || mode;
+      for (const [number, button] of explorerFloorButtons) {
+        const selected = number === floor;
+        button.classList.toggle('is-active', selected);
+        button.setAttribute('aria-pressed', String(selected));
+      }
+      const modeButtons = [elements.explorerExteriorMode, elements.explorerCutawayMode, elements.explorerFloorMode, elements.explorerExplodedMode];
+      for (const button of modeButtons) {
+        const selected = button.dataset.explorerMode === mode;
+        button.classList.toggle('is-active', selected);
+        button.setAttribute('aria-pressed', String(selected));
+      }
+      elements.explorerEnterApartment.textContent = state.walking ? 'Inside apartment' : 'Enter apartment';
+      elements.explorerEnterApartment.disabled = mode === 'interior' && Boolean(state.walking);
+      elements.explorerRotateFloor.setAttribute('aria-pressed', String(Boolean(state.rotateEnabled)));
+      elements.explorerRotateFloor.classList.toggle('is-active', Boolean(state.rotateEnabled));
+      elements.explorerRotateFloor.textContent = state.rotateEnabled ? 'Drag to rotate · On' : 'Rotate floor';
+      elements.explorerRotateFloor.disabled = Boolean(state.walking);
+      elements.explorerReassemble.hidden = mode !== 'exploded';
+      elements.explorerReturnToFloor.hidden = mode !== 'interior';
+      elements.explorerRoomSection.hidden = !['cutaway', 'floor', 'interior'].includes(mode);
+      elements.explorerWalkControls.hidden = !Boolean(state.walking);
+      elements.explorerModelNotice.textContent = state.proxyFloorsOnly
+        ? 'This model has no floor-specific facade groups. Exploded view uses inferred floor datum proxies; the sample interior remains conceptual.'
+        : 'The selected floor uses floor-aware exterior geometry. Apartment rooms are illustrative; no approved interior drawing is present in the repository.';
+      elements.explorerAccuracy.textContent = 'Illustrative room concept · not an approved apartment plan';
+      for (const [id, button] of explorerPlanButtons) {
+        const selected = id === state.selectedRoom;
+        button.classList.toggle('is-selected', selected);
+        button.setAttribute('aria-pressed', String(selected));
+      }
+      for (const [id, button] of explorerRoomButtons) {
+        const selected = id === state.selectedRoom;
+        button.classList.toggle('is-selected', selected);
+        button.setAttribute('aria-pressed', String(selected));
+      }
+      if (state.roomTitle) elements.explorerRoomTitle.textContent = state.roomTitle;
+      if (state.roomDescription) elements.explorerRoomDescription.textContent = state.roomDescription;
     },
     setBlueprintState(active) {
       const enabled = Boolean(active);
