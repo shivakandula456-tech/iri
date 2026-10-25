@@ -6,20 +6,19 @@
 
 ## Current feature slice
 
-- **Guided exterior exploration:** an authored camera route through existing presets. Manual pointer, wheel, camera-preset and mode inputs must stop the tour immediately.
-- **Live atmosphere:** a 07:00–20:00 presentation slider updates the procedural sky, direct sunlight, hemisphere fill, fog and exposure. The environment reflection map is rebuilt after slider release, not on every input event.
+- **Signature Reveal:** cinematic exterior camera path, staggered title/rule animation, reduced-motion support, skip/replay, and a sunset palette reset on replay.
+- **Living Building / Day-to-Night:** a 07:00–20:00 conceptual time slider adjusts the procedural sky, sun, hemisphere fill, fog, exposure, warm window emission and lobby glow. The environment reflection map rebuilds after slider release, not on every input event.
+- **Director's Cut:** authored camera route with a dedicated step panel, progress, pause/resume, next stop and skip controls. Manual pointer and wheel interactions interrupt the route.
 - **Cinematic highlights:** a subtle, optional local UnrealBloomPass stage is included after the base scene pass. The toggle is inside Atmosphere and the app has a direct-render fallback if composer initialization fails.
 - **Static deployment:** preserve the existing vanilla JavaScript / Three.js architecture and locally bundled runtime. No backend, database, build pipeline or API key is required.
 
-## Implemented in the current branch: facade intelligence
+## Interactive facade inspection and Blueprint-to-Reality
 
-- Uses raycasting against the actual building group.
-- Classifies selected surfaces by hit point, transformed face normal, name hints and current geometry metadata.
-- Shows a restrained label and explanation with side/floor context, plus a temporary geometry outline.
-- Disposes the outline geometry/material when the selection changes or inspection is disabled.
+- Facade inspection uses raycasting against real building meshes, contextual feature descriptions, elevation and approximate-level labels, and a temporary outline.
+- Blueprint view switches the same geometry to architectural edge lines against a restrained technical grid; original mesh visibility and material references are restored on exit.
 - Feature annotations deliberately identify the model as conceptual/inferred, not architect-verified. No apartment interior or floor-selection features are included.
 
-**Verification status:** source integration is committed on the feature branch; interactive selection and disposal behaviour remain pending in a real browser.
+**Verification status:** source integration is committed on the feature branch. Syntax and DOM contract checks are required before merge; visual interaction testing remains pending in a real WebGL browser.
 
 ## Rendering investigation
 
