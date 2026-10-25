@@ -12,6 +12,7 @@ A static, browser-based, conceptual 3D exterior study of Iris Residences by Anan
 - Guided exterior tour with interruptible camera transitions across the main elevations, entrance, site and roof.
 - Optional local post-processing with restrained UnrealBloomPass highlights and an accessible cinematic-finish toggle; base WebGL rendering remains the fallback.
 - Facade inspection mode with click-to-select details and temporary geometry outlines; all notes identify the reconstruction as conceptual/inferred.
+- Optional WebXR AR preview on supported secure-context devices: places a miniature exterior model on a detected surface, supports repositioning and restores the normal viewer on exit.
 - Live time-of-day control that updates the conceptual sky, direct sunlight, ambient fill, fog and exposure.
 - Locally bundled Three.js r164, OrbitControls, reference images and project documentation.
 - An optional GLB loading path. No `.glb` model is supplied in this delivery; the procedural reconstruction is used by default.
@@ -46,6 +47,7 @@ Place a licensed, approved `.glb` file in `assets/models/` and update `EXTERIOR_
 - Presets: buttons 1–9 map to Front, Rear, Left, Right, Isometric, Elevated, Roof, Entrance and Home.
 - Guided tour: select **Guided tour** to start the authored exterior route; select it again or manipulate the scene to stop and take control.
 - Facade inspection: select **Inspect** then click a tower surface for an outline and a concise conceptual annotation. Dragging still operates the camera; switching to Free-look disables inspection.
+- AR preview: on compatible browsers/devices served over HTTPS, use **AR Preview**, move the phone until the placement ring appears and tap to place/reposition the miniature. The button is hidden where immersive AR is unsupported; if hit-test or session startup fails, the regular 3D viewer remains usable.
 - Cinematic finish: inside **Atmosphere**, enable or disable restrained highlight bloom. If the local post-processing stack cannot initialize, the viewer returns to the base renderer.
 - Atmosphere: open the **Atmosphere** control and move the time-of-day slider between 07:00 and 20:00. Sky and lights update while dragging; the reflection environment refreshes when the slider is released.
 - `O`: Orbit, `F`: Free-look, `I`: Replay intro, `Home`: reset camera, `Escape`: exit free-look or release pointer lock.
@@ -59,7 +61,7 @@ The official project page and image references are listed in `docs/source-manife
 
 ## Immersive experience work
 
-The `feature/immersive-architectural-experience` branch adds the guided tour and live time-of-day lighting controller. The tour uses existing camera presets and should stop immediately when the visitor interacts manually. Time-of-day is a visual presentation control, not an accurate solar-position simulation. WebXR AR and a WebGPU renderer comparison remain future work; they are not presented as implemented features.
+The `feature/immersive-architectural-experience` branch adds the guided tour and live time-of-day lighting controller. The tour uses existing camera presets and should stop immediately when the visitor interacts manually. Time-of-day is a visual presentation control, not an accurate solar-position simulation. A WebGPU renderer comparison remains future work; they are not presented as implemented features.
 
 ## Current verification status
 
