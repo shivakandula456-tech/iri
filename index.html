@@ -59,6 +59,10 @@
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 5v14"></path><path d="M5 6h10l-2.5 3L15 12H5"></path><circle cx="5" cy="19" r="1"></circle></svg>
           <span id="guidedTourLabel">Guided tour</span>
         </button>
+        <button id="facadeInspectButton" type="button" class="top-button facade-inspect-button" aria-pressed="false" title="Turn on facade inspection">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.2"></circle><path d="m15.1 15.1 5 5"></path><path d="M8.2 10.5h4.6"></path><path d="M10.5 8.2v4.6"></path></svg>
+          <span id="facadeInspectLabel">Inspect</span>
+        </button>
         <button id="fullscreenButton" type="button" class="top-button top-button-icon" aria-pressed="false" title="Toggle fullscreen">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 4H4v5"></path><path d="M15 4h5v5"></path><path d="M20 15v5h-5"></path><path d="M4 15v5h5"></path></svg>
           <span id="fullscreenLabel">Fullscreen</span>
@@ -258,6 +262,20 @@
           <span>Not an official Anandtara communication</span>
         </footer>
       </div>
+    </aside>
+
+    <aside id="facadeInfo" class="facade-info" role="status" aria-live="polite" hidden>
+      <div class="facade-info-head">
+        <span id="facadeInfoKicker" class="eyebrow">FACADE INTELLIGENCE</span>
+        <button id="facadeInfoClose" type="button" class="facade-info-close" aria-label="Close facade details">×</button>
+      </div>
+      <h3 id="facadeInfoTitle">Exterior feature</h3>
+      <p id="facadeInfoDescription"></p>
+      <div class="facade-info-meta">
+        <span id="facadeInfoSide"></span>
+        <span id="facadeInfoFloor"></span>
+      </div>
+      <p id="facadeInfoConfidence" class="facade-info-confidence">Conceptual / inferred geometry</p>
     </aside>
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
