@@ -2101,3 +2101,33 @@ body[data-mode="free"] .hud-hint {
     height: 34px;
   }
 }
+
+
+/* When the headset/phone owns the view, keep only branding and the AR exit
+   action visible inside the optional WebXR DOM overlay. */
+body.ar-active .hud,
+body.ar-active .concept-note,
+body.ar-active .light-tool,
+body.ar-active #replayIntro,
+body.ar-active #guidedTourButton,
+body.ar-active #facadeInspectButton,
+body.ar-active #aboutButton,
+body.ar-active #projectSiteLink,
+body.ar-active #fullscreenButton {
+  display: none !important;
+}
+
+body.ar-active .topbar {
+  padding-top: calc(12px + var(--safe-top));
+}
+
+body.ar-active .top-actions .ar-preview-button {
+  width: auto;
+  padding: 0 14px;
+  background: rgba(9, 16, 21, 0.9);
+  border-color: rgba(211, 176, 124, 0.48);
+}
+
+body.ar-active .top-actions .ar-preview-button span {
+  display: inline;
+}
