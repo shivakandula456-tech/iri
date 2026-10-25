@@ -25,6 +25,7 @@ import { CameraDirector, PRESETS } from './js/camera-director.js';
 import { GuidedTour } from './js/guided-tour.js';
 import { LightingController } from './js/lighting-controller.js';
 import { FacadeInspector } from './js/facade-inspector.js';
+import { BlueprintController } from './js/blueprint-controller.js';
 import { FreeLookController } from './js/free-look.js';
 import { QualityController } from './js/quality.js';
 import { disposeSceneResources } from './js/utils.js';
@@ -44,6 +45,7 @@ let freeLook;
 let guidedTour;
 let lightingController;
 let facadeInspector;
+let blueprintController;
 let site;
 let arSession = null;
 let arHitTestSource = null;
@@ -547,6 +549,12 @@ function replayIntro() {
   if (guidedTour?.active) guidedTour.stop({ reason: 'intro' });
   if (mode === 'free') setMode('orbit');
   if (director.isTransitioning) director.interrupt();
+  // The signature reveal always opens in the intended sunset palette.
+  const timeSlider = document.getElementById('timeOfDay');
+  if (lightingController) {
+    lightingController.setTimeOfDay(18, { refreshEnvironment: true });
+    if (timeSlider) timeSlider.value = '18';
+  }
   director.startIntro({ reducedMotion: motionPreference });
   director.update(0);
 }
@@ -559,6 +567,10 @@ function toggleFacadeInspection() {
   if (!ready || !facadeInspector || renderer?.xr?.isPresenting) return;
   if (mode === 'free') setMode('orbit');
   if (guidedTour?.active) guidedTour.stop({ reason: 'manual' });
+  if (!facadeInspector.enabled && blueprintController?.enabled) {
+    blueprintController.setEnabled(false);
+    ui.setBlueprintState(false);
+  }
   const active = !facadeInspector.enabled;
   facadeInspector.setEnabled(active);
   ui.setInspectionState(active);
@@ -571,6 +583,41 @@ function clearFacadeInspection() {
   if (facadeInspector?.enabled) facadeInspector.setEnabled(false);
   ui?.setInspectionState(false);
   ui?.clearFacadeInfo();
+}
+
+function toggleBlueprint() {
+  if (!ready || !blueprintController || renderer?.xr?.isPresenting) return;
+  if (guidedTour?.active) guidedTour.stop({ reason: 'blueprint' });
+  if (facadeInspector?.enabled) {
+    facadeInspector.setEnabled(false);
+    ui.setInspectionState(false);
+    ui.clearFacadeInfo();
+  }
+  const active = !blueprintController.enabled;
+  blueprintController.setEnabled(active);
+  ui.setBlueprintState(active);
+  ui.showToast(active
+    ? 'Blueprint view — architectural edge geometry revealed.'
+    : 'Reality view restored — original materials and surfaces returned.');
+}
+
+function toggleGuidedPause() {
+  if (!guidedTour?.active) return;
+  guidedTour.togglePause();
+  ui.showToast(guidedTour.paused ? 'Tour progression paused.' : 'Tour resumed.');
+}
+
+function nextGuidedStop() {
+  if (!guidedTour?.active) return;
+  if (director?.isTransitioning) director.interrupt();
+  guidedTour.next();
+}
+
+function skipGuidedTour() {
+  if (!guidedTour?.active) return;
+  if (director?.isTransitioning) director.interrupt();
+  guidedTour.stop({ reason: 'skipped' });
+  ui.showToast('Tour skipped. Camera control restored.');
 }
 
 function toggleGuidedTour() {
@@ -723,7 +770,11 @@ async function boot() {
     onMode: (next) => setMode(next),
     onReplayIntro: () => replayIntro(),
     onGuidedTourToggle: () => toggleGuidedTour(),
+    onGuidedPauseToggle: () => toggleGuidedPause(),
+    onGuidedNext: () => nextGuidedStop(),
+    onGuidedSkip: () => skipGuidedTour(),
     onInspectToggle: () => toggleFacadeInspection(),
+    onBlueprintToggle: () => toggleBlueprint(),
     onClearInspection: () => clearFacadeInspection(),
     onSkipIntro: () => skipIntro(),
     onSheetOpen: () => {
@@ -770,6 +821,7 @@ async function boot() {
     await nextFrame();
 
     materials = createMaterials(renderer);
+    lightingController.setWindowMaterials(materials);
     ui.setLoading(0.38, EXTERIOR_MODEL_URL ? 'Loading the supplied architectural model…' : 'Raising the tower and crown…');
     await nextFrame();
 
@@ -784,6 +836,10 @@ async function boot() {
       building = buildBuilding(materials);
     }
     scene.add(building.group);
+    blueprintController = new BlueprintController({
+      buildingGroup: building.group,
+      onChange: (active) => ui.setBlueprintState(active)
+    });
     facadeInspector = new FacadeInspector({
       scene,
       camera,
@@ -847,6 +903,7 @@ async function boot() {
       guidedTour,
       lightingController,
       facadeInspector,
+      blueprintController,
       site,
       building,
       sky,
@@ -896,6 +953,8 @@ async function boot() {
           quality: quality?.state || null,
           timeOfDay: lightingController?.getState?.().hour ?? null,
           guidedTourActive: Boolean(guidedTour?.active),
+          guidedTourPaused: Boolean(guidedTour?.paused),
+          blueprintActive: Boolean(blueprintController?.enabled),
           facadeInspectionActive: Boolean(facadeInspector?.enabled),
           arPresenting: Boolean(renderer.xr?.isPresenting),
           arModelPlaced: Boolean(arPlaced),
@@ -928,6 +987,9 @@ async function boot() {
 
 window.addEventListener('beforeunload', () => {
   disposed = true;
+  if (blueprintController) {
+    try { blueprintController.dispose(); } catch { /* best-effort visual cleanup */ }
+  }
   if (renderer && scene) {
     try {
       disposeSceneResources(scene);
