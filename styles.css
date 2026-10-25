@@ -2349,3 +2349,39 @@ body.is-building-explorer .top-actions .explore-floors-button span {
 @media (max-width:420px) {
   body.is-building-explorer .top-actions .explore-floors-button { width:auto; height:32px; min-height:32px; font-size:8px; }
 }
+
+
+.explorer-cut-control {
+  margin: 8px 0 10px;
+  padding: 10px 11px 9px;
+  border: 1px solid rgba(211,176,124,0.2);
+  border-radius: 10px;
+  background: rgba(211,176,124,0.045);
+}
+.explorer-cut-control label {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  color:var(--ivory-soft);
+  font-size:8.5px;
+}
+.explorer-cut-control label strong {
+  color:var(--gold);
+  font-size:8px;
+  font-weight:500;
+  white-space:nowrap;
+}
+.explorer-cut-control input[type="range"] {
+  display:block;
+  width:100%;
+  margin:10px 0 5px;
+  accent-color:var(--gold);
+  cursor:ew-resize;
+}
+.explorer-cut-control p {
+  margin:0;
+  color:var(--muted-2);
+  font-size:7.5px;
+  line-height:1.45;
+}
