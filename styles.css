@@ -2312,3 +2312,40 @@ body.is-blueprint .concept-line { background:#9de3ed; box-shadow:0 0 9px rgba(15
 @media (prefers-reduced-motion:reduce) {
   .building-explorer-panel { animation:none; }
 }
+
+
+/* IRIS Inside takes temporary ownership of the scene; keep only its entry
+   control and the exterior atmosphere tool visible above the explorer panel. */
+body.is-building-explorer .hud,
+body.is-building-explorer .concept-note,
+body.is-building-explorer #replayIntro,
+body.is-building-explorer #aboutButton,
+body.is-building-explorer #projectSiteLink,
+body.is-building-explorer #guidedTourButton,
+body.is-building-explorer #facadeInspectButton,
+body.is-building-explorer #blueprintToggle,
+body.is-building-explorer #arPreviewButton,
+body.is-building-explorer #fullscreenButton {
+  display: none !important;
+}
+body.is-building-explorer .topbar {
+  align-items: center;
+  padding-top: calc(12px + var(--safe-top));
+}
+body.is-building-explorer .top-actions .explore-floors-button {
+  width: auto;
+  min-height: 34px;
+  padding: 0 13px;
+  border-color: rgba(211,176,124,0.52);
+  background: rgba(133,93,47,0.24);
+}
+body.is-building-explorer .top-actions .explore-floors-button span {
+  display: inline;
+}
+@media (max-width:760px) {
+  body.is-building-explorer .top-actions .explore-floors-button { width:auto; padding:0 10px; }
+  body.is-building-explorer .top-actions .explore-floors-button span { display:inline; }
+}
+@media (max-width:420px) {
+  body.is-building-explorer .top-actions .explore-floors-button { width:auto; height:32px; min-height:32px; font-size:8px; }
+}
