@@ -9,6 +9,10 @@ A static, browser-based, conceptual 3D exterior study of Iris Residences by Anan
 - Orbit mode, separate free-look mode, keyboard and touch movement.
 - Front, Rear, Left, Right, Isometric, Elevated, Roof, Entrance and Home camera presets.
 - Skip/replay intro, reduced-motion handling, loading/error states and adaptive render resolution.
+- Signature Reveal: cinematic camera path, staggered title/rule animation, reduced-motion behavior, skip/replay and sunset reset.
+- Living Building day-to-night slider with dynamic sky, sunlight, ambient fill, fog, exposure and evening window/lobby emission.
+- Director's Cut guided tour with step progress, pause/resume, next stop and skip controls.
+- Reversible Blueprint-to-Reality render mode that reveals the real building geometry as edge lines and restores original materials on exit.
 - Guided exterior tour with interruptible camera transitions across the main elevations, entrance, site and roof.
 - Optional local post-processing with restrained UnrealBloomPass highlights and an accessible cinematic-finish toggle; base WebGL rendering remains the fallback.
 - Facade inspection mode with click-to-select details and temporary geometry outlines; all notes identify the reconstruction as conceptual/inferred.
