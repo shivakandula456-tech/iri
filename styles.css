@@ -2064,3 +2064,40 @@ body[data-mode="free"] .hud-hint {
   background: rgba(255, 255, 255, 0.035);
   border-color: var(--line);
 }
+
+
+/* ------------------------------------------------------------------ */
+/* Optional WebXR miniature preview                                    */
+/* ------------------------------------------------------------------ */
+
+.ar-preview-button {
+  border-color: rgba(211, 176, 124, 0.24);
+}
+
+.ar-preview-button svg {
+  color: var(--gold);
+}
+
+.ar-preview-button[aria-pressed="true"] {
+  color: var(--ivory);
+  border-color: rgba(211, 176, 124, 0.55);
+  background: rgba(133, 93, 47, 0.32);
+}
+
+@media (max-width: 760px) {
+  .top-actions .ar-preview-button {
+    width: 36px;
+    padding: 0;
+  }
+
+  .top-actions .ar-preview-button span {
+    display: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .top-actions .ar-preview-button {
+    width: 32px;
+    height: 34px;
+  }
+}
