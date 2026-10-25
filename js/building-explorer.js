@@ -67,7 +67,7 @@ export class BuildingExplorer {
     this.interiorLoadToken = 0;
     this.siteInitialVisibility = site?.group?.visible ?? true;
     this.originalLocalClipping = renderer.localClippingEnabled;
-    this.clipPlane = new THREE.Plane(new THREE.Vector3(0, 0, -1), 8.0);
+    this.clipPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -6.0);
     this.clipRecords = [];
     this.floorGroups = new Map(building.floorGroups || []);
     this.staticChildren = [];
@@ -458,7 +458,7 @@ export class BuildingExplorer {
   }
 
   toggleRotate() {
-    if (!this.active || this.walking) return;
+    if (!this.active || this.walking || !['floor', 'cutaway', 'exploded'].includes(this.mode)) return;
     this.rotateEnabled = !this.rotateEnabled;
     if (this.rotateEnabled) this.controls.enabled = false;
     else this.controls.enabled = true;
@@ -507,7 +507,7 @@ export class BuildingExplorer {
     this.controls.enabled = true;
     for (const { object, visible } of this.staticChildren) object.visible = visible;
     for (const [floorNumber, group] of this.floorGroups) {
-      group.visible = true;
+      group.visible = !group.userData.proxyOnly;
       group.position.y = 0;
       group.rotation.y = 0;
       const plate = this.floorPlates.get(floorNumber);
@@ -878,7 +878,7 @@ export class BuildingExplorer {
     this._clearClipping();
     for (const { object, visible } of this.staticChildren) object.visible = visible;
     for (const [floorNumber, group] of this.floorGroups) {
-      group.visible = true;
+      group.visible = !group.userData.proxyOnly;
       group.position.y = 0;
       group.rotation.y = 0;
       const plate = this.floorPlates.get(floorNumber);
