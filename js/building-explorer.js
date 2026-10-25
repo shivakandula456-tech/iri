@@ -335,6 +335,7 @@ export class BuildingExplorer {
       this._flyTo(this._floorCameraPosition(), this._floorTarget(), 850);
     }
     this.interiorRoot.position.y = this._floorBottom();
+    if (this.interiorAssets[next]) void this.loadInteriorAsset(next);
     this._emitState();
   }
 
@@ -358,6 +359,22 @@ export class BuildingExplorer {
     } else {
       this._flyTo(this._floorCameraPosition(), this._floorTarget(), 1000, mode === 'cutaway' ? 5 : 3);
     }
+    this._emitState();
+  }
+
+  reassemble() {
+    if (!this.active) return;
+    this.walking = false;
+    this.heldKeys.clear();
+    this.rotateEnabled = false;
+    this.mode = 'exterior';
+    this._applyVisualMode();
+    this._flyTo(
+      new THREE.Vector3(104, 60, 124),
+      new THREE.Vector3(0, ROOF_Y * 0.48, 0),
+      1050,
+      2.0
+    );
     this._emitState();
   }
 
@@ -746,7 +763,10 @@ export class BuildingExplorer {
       return;
     }
     this.lastPointer = null;
-    if (!moved) this._pickFromExterior(event.clientX, event.clientY);
+    if (!moved) {
+      if (this.mode === 'cutaway' || this.mode === 'floor') this._pickRoom(event.clientX, event.clientY);
+      else if (this.mode === 'exterior' || this.mode === 'exploded') this._pickFromExterior(event.clientX, event.clientY);
+    }
     this.pointerDragged = false;
   }
 
