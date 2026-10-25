@@ -65,8 +65,15 @@ export function buildBuilding(materials) {
     )
   ];
 
+  const floorGroups = new Map(
+    group.children
+      .filter((child) => Number.isInteger(child.userData?.floorNumber))
+      .map((child) => [child.userData.floorNumber, child])
+  );
+
   return {
     group,
+    floorGroups,
     colliders,
     focus: new THREE.Vector3(0, ROOF_Y * 0.51, 0),
     entrance: new THREE.Vector3(ENTRANCE.x, 4.6, HALF_D + 8),
