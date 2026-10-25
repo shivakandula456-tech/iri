@@ -52,11 +52,13 @@ For all pending rows, record the browser/OS, actual outcome, notes and retest ou
 | W | Signature Reveal | Opening begins in sunset palette, title/rule reveal runs, reduced-motion preference simplifies motion, Skip/Replay consistently clears stale classes and restores controls | Pending — not run on this branch |
 | X | IRIS Inside floor selection | Explore Floors opens; all configured floor buttons render; clicking each floor button and clicking the tower select the matching floor and move focus; selected floor label/highlight remains synchronized | Pending — not run on this branch |
 | Y | Exploded stack and reassembly | Eligible floor groups separate around the selected floor; the selected floor can rotate; Reassemble resets floor group transforms and shows the full tower/site; repeated cycles leave no residual offsets | Pending — not run on this branch |
-| Z | Selected-floor cutaway | The cutaway exposes the front side of the selected level only; neighboring floors keep their facade; moving to another floor restores old materials and clips only the new selection | Pending — not run on this branch |
+| Z | Selected-floor cutaway | The cutaway exposes the front side of the selected level only; the depth slider moves the clipping plane without reloading; neighboring floors keep their facade; moving levels restores old materials and clips only the new selection | Pending — not run on this branch |
 | AA | Synchronized room plan | Selecting each schematic room highlights the matching 3D room zone and the plan/list button; selected room title/description updates consistently | Pending — not run on this branch |
 | AB | Apartment walk-through | Enter Apartment moves inside; drag changes view direction; WASD/arrows and touch D-pad move within bounds; simple wall/furniture colliders block direct passage through illustrative partitions; selecting a room moves camera to it; Return to Floor stops walking and restores orbit controls | Pending — not run on this branch |
 | AC | Return to exterior | Closing from each explorer mode, including an in-progress camera transition, restores original camera pose, OrbitControls distances/enabled state and site visibility without leaking clipping materials or room geometry | Pending — not run on this branch |
 | AD | Optional interior GLB | With the default empty asset map, no interior GLB is requested; with a configured same-site asset, it lazy-loads for the selected floor; a missing/bad asset falls back to conceptual interior and never leaves the viewer blank | Pending — not run on this branch |
+| AE | X-ray facade mode | The selected floor's material clones become translucent and reveal illustrative interior zones; neighboring floor materials remain intact; switching modes restores original materials without opacity leakage | Pending — not run on this branch |
+| AF | Interior day-to-night | Sample-room point lights and warm ceiling fixtures dim in daylight and illuminate toward evening/night when the shared atmosphere slider changes; lights exist only while the interior is visible | Pending — not run on this branch |
 
 ## Testing environment limitation
 
@@ -64,7 +66,7 @@ The test environment returned `ERR_BLOCKED_BY_ADMINISTRATOR` for navigation to b
 
 ## Release gate
 
-Do not mark this concept acceptance-complete until tests A–AD have been run in a normal browser, actual defects have been fixed, and the affected tests have been repeated. Save current screenshots and the final browser-console/network notes under `docs/evidence/` after that test pass.
+Do not mark this concept acceptance-complete until tests A–AF have been run in a normal browser, actual defects have been fixed, and the affected tests have been repeated. Save current screenshots and the final browser-console/network notes under `docs/evidence/` after that test pass.
 
 
 ## Detailed feature tests for the immersive branch
@@ -123,3 +125,13 @@ Do not mark this concept acceptance-complete until tests A–AD have been run in
 - Verify the repeated-use path (open, explode, rotate, reassemble, cutaway, enter apartment, return, close) does not accumulate duplicate objects, clipping materials or disposed geometry.
 - Keep the caveat visible: all sample rooms and plan blocks are illustrative. Do not promote these layouts as verified apartment drawings.
 - If a local interior GLB is configured later, check that only the selected level asset loads, source/unit scaling matches the floor, room tags map correctly, and failed loads preserve the conceptual fallback. The default asset map is empty.
+
+
+### X-ray facade and cutaway depth
+- Select a floor and choose X-ray facade. Confirm the selected floor alone becomes translucent and its room zones remain readable; switch to another mode and verify the original materials are restored.
+- Choose Reveal cutaway and drag the depth slider across its range. Confirm the opening moves continuously through the selected floor without reloading the scene, while adjacent floor facades remain intact.
+- Change selected floor while in each reveal mode, then return to exterior. Confirm no clipped or translucent material remains on the full tower.
+
+### Interior day-to-night lighting
+- Enter the illustrative apartment and move the Atmosphere control to morning, noon, sunset and 20:00.
+- Verify the warm ceiling fixtures and room lights are subdued during daylight and brighter toward night; leave the interior and confirm the full exterior remains responsive to the same slider.
