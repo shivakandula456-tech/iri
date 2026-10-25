@@ -55,12 +55,30 @@
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 4h6v6"></path><path d="M20 4 11 13"></path><path d="M18 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5"></path></svg>
           <span>Project site</span>
         </a>
+        <button id="guidedTourButton" type="button" class="top-button guided-tour-button" aria-pressed="false" title="Play the guided exterior tour">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 5v14"></path><path d="M5 6h10l-2.5 3L15 12H5"></path><circle cx="5" cy="19" r="1"></circle></svg>
+          <span id="guidedTourLabel">Guided tour</span>
+        </button>
         <button id="fullscreenButton" type="button" class="top-button top-button-icon" aria-pressed="false" title="Toggle fullscreen">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 4H4v5"></path><path d="M15 4h5v5"></path><path d="M20 15v5h-5"></path><path d="M4 15v5h5"></path></svg>
           <span id="fullscreenLabel">Fullscreen</span>
         </button>
       </div>
     </header>
+
+    <details id="lightTool" class="light-tool">
+      <summary aria-label="Open live time-of-day lighting controls">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.42 1.42"></path><path d="m17.65 17.65 1.42 1.42"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m4.93 19.07 1.42-1.42"></path><path d="m17.65 6.35 1.42-1.42"></path></svg>
+        <span>Atmosphere</span>
+        <strong id="lightTimeLabel">Sunset · 18:00</strong>
+      </summary>
+      <div class="light-tool-body">
+        <label for="timeOfDay">Time of day</label>
+        <input id="timeOfDay" type="range" min="7" max="20" step="0.25" value="18" aria-describedby="lightToolNote">
+        <div class="light-time-endpoints"><span>07:00</span><span>20:00</span></div>
+        <p id="lightToolNote">Adjusts the conceptual sky, sunlight, ambient fill and exposure. Shadow and reflection updates settle after you release the slider.</p>
+      </div>
+    </details>
 
     <div class="concept-note" aria-hidden="true">
       <span class="concept-line"></span>
