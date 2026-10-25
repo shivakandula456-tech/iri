@@ -231,6 +231,10 @@ function configureARButton() {
 
   async function enterARPreview() {
     if (!ready || !renderer || !building?.group) return;
+    if (buildingExplorer?.active) {
+      ui.showToast('Return to the full exterior before opening AR preview.');
+      return;
+    }
     if (mode === 'free') setMode('orbit');
     if (guidedTour?.active) guidedTour.stop({ reason: 'ar' });
     if (facadeInspector?.enabled) {
