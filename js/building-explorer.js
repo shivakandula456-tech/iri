@@ -10,12 +10,12 @@ const GLTF_LOADER_URL = 'https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm
 export const INTERIOR_ASSETS = Object.freeze({});
 
 export const ROOM_DEFINITIONS = Object.freeze([
-  { id: 'living', label: 'Living room', shortLabel: 'Living', x: -7.2, z: 2.0, width: 8.8, depth: 5.4, color: 0x778d86, description: 'Illustrative main gathering space. Area, windows, room connections and actual dimensions must be checked against an approved apartment plan.', visit: [-7.0, 4.8, -7.0] },
-  { id: 'dining', label: 'Dining area', shortLabel: 'Dining', x: 0.0, z: 2.0, width: 5.8, depth: 5.4, color: 0xb59a73, description: 'Illustrative dining zone placed between the living area and kitchen for demonstration. This is not a verified apartment arrangement.', visit: [0.0, 4.9, -5.0] },
-  { id: 'kitchen', label: 'Kitchen', shortLabel: 'Kitchen', x: 6.5, z: 2.0, width: 6.8, depth: 5.4, color: 0x7a8fa0, description: 'Illustrative kitchen zone with conceptual counters and work surfaces. Utility positions and actual dimensions are not verified.', visit: [6.3, 4.7, -5.0] },
-  { id: 'bedroom', label: 'Bedroom', shortLabel: 'Bedroom', x: -7.0, z: -3.6, width: 8.4, depth: 4.8, color: 0x8c7e9c, description: 'Illustrative private room with conceptual furniture blocks. The actual bedroom count, orientation and room dimensions require verified drawings.', visit: [-7.0, 0.8, -7.0] },
-  { id: 'bathroom', label: 'Bathroom', shortLabel: 'Bath', x: 4.7, z: -3.6, width: 4.4, depth: 4.8, color: 0x7b9b9b, description: 'Illustrative bathroom zone for spatial demonstration only. Plumbing, waterproofing and approved fixture layouts are not modeled or verified.', visit: [4.8, 1.0, -6.0] },
-  { id: 'balcony', label: 'Balcony', shortLabel: 'Balcony', x: 0.0, z: 7.1, width: 13.2, depth: 1.7, color: 0xc29a6e, description: 'Illustrative balcony zone connecting the sample layout to the exterior. Actual balcony depth and orientation must be verified.', visit: [0.0, 9.0, -0.5] }
+  { id: 'living', label: 'Living room', shortLabel: 'Living', x: -7.2, z: 2.0, width: 8.8, depth: 5.4, color: 0x778d86, description: 'Illustrative main gathering space. Area, windows, room connections and actual dimensions must be checked against an approved apartment plan.', visit: [0.0, 2.3, -0.8] },
+  { id: 'dining', label: 'Dining area', shortLabel: 'Dining', x: 0.0, z: 2.0, width: 5.8, depth: 5.4, color: 0xb59a73, description: 'Illustrative dining zone placed between the living area and kitchen for demonstration. This is not a verified apartment arrangement.', visit: [0.0, 2.4, -0.8] },
+  { id: 'kitchen', label: 'Kitchen', shortLabel: 'Kitchen', x: 6.5, z: 2.0, width: 6.8, depth: 5.4, color: 0x7a8fa0, description: 'Illustrative kitchen zone with conceptual counters and work surfaces. Utility positions and actual dimensions are not verified.', visit: [-1.0, 2.4, -0.8] },
+  { id: 'bedroom', label: 'Bedroom', shortLabel: 'Bedroom', x: -7.0, z: -3.6, width: 8.4, depth: 4.8, color: 0x8c7e9c, description: 'Illustrative private room with conceptual furniture blocks. The actual bedroom count, orientation and room dimensions require verified drawings.', visit: [0.0, 1.8, -0.5] },
+  { id: 'bathroom', label: 'Bathroom', shortLabel: 'Bath', x: 4.7, z: -3.6, width: 4.4, depth: 4.8, color: 0x7b9b9b, description: 'Illustrative bathroom zone for spatial demonstration only. Plumbing, waterproofing and approved fixture layouts are not modeled or verified.', visit: [-0.3, 1.4, -0.5] },
+  { id: 'balcony', label: 'Balcony', shortLabel: 'Balcony', x: 0.0, z: 7.1, width: 13.2, depth: 1.7, color: 0xc29a6e, description: 'Illustrative balcony zone connecting the sample layout to the exterior. Actual balcony depth and orientation must be verified.', visit: [0.0, 0.2, -1.0] }
 ]);
 
 /**
@@ -74,7 +74,10 @@ export class BuildingExplorer {
     this.floorPlates = new Map();
     this._captureBuildingLayers();
     this.floorHighlight = this._createFloorHighlight();
-    this.interiorRoot = this._createIllustrativeApartment();
+    this.interiorRoot = new THREE.Group();
+    this.interiorRoot.name = 'Interactive apartment interior container';
+    this.conceptInterior = this._createIllustrativeApartment();
+    this.interiorRoot.add(this.conceptInterior);
     this.scene.add(this.interiorRoot);
     this.interiorRoot.visible = false;
     this.raycaster = new THREE.Raycaster();
@@ -278,7 +281,7 @@ export class BuildingExplorer {
 
     this.roomObjects = roomMap;
     this.interiorMaterials = [floorMaterial, wallMaterial, trimMaterial, darkMaterial, ...Array.from(roomMap.values(), (item) => item.zone.material)];
-    root.visible = false;
+    root.visible = true;
     return root;
   }
 
@@ -448,7 +451,11 @@ export class BuildingExplorer {
   }
 
   close() {
-    if (!this.active || this.flight) return;
+    if (!this.active) return;
+    if (this.flight) {
+      this.flight = null;
+      this.controls.enabled = true;
+    }
     this.walking = false;
     this.heldKeys.clear();
     this.rotateEnabled = false;
@@ -490,6 +497,8 @@ export class BuildingExplorer {
     }
     if (this.site?.group) this.site.group.visible = this.siteInitialVisibility;
     this.interiorRoot.visible = false;
+    this.conceptInterior.visible = !(this.loadedInterior && this.loadedInteriorFloor === this.selectedFloor);
+    if (this.loadedInterior) this.loadedInterior.visible = this.loadedInteriorFloor === this.selectedFloor;
     this.floorHighlight.visible = this.mode !== 'exploded';
     this._updateFloorHighlight();
 
@@ -806,10 +815,12 @@ export class BuildingExplorer {
       if (!model) return false;
       model.name = `Floor ${floorNumber} supplied interior asset`;
       model.userData.floorNumber = floorNumber;
-      model.position.y = this._floorBottom();
+      model.position.y = 0;
       model.userData.accuracy = 'Imported interior asset — verify source and plan status before public presentation.';
+      model.visible = true;
       this.interiorRoot.add(model);
       this.loadedInterior = model;
+      this.conceptInterior.visible = false;
       this.loadedInteriorFloor = floorNumber;
       return true;
     } catch (error) {
@@ -825,6 +836,33 @@ export class BuildingExplorer {
       if (Array.isArray(object.material)) object.material.forEach((m) => m.dispose());
       else object.material?.dispose?.();
     });
+  }
+
+  _stopWalk() {
+    this.walking = false;
+    this.heldKeys.clear();
+    this.rotatePointer = null;
+    this.lastPointer = null;
+    this.pointerDragged = false;
+  }
+
+  _restoreDefaultVisuals() {
+    this._stopWalk();
+    this._clearClipping();
+    for (const { object, visible } of this.staticChildren) object.visible = visible;
+    for (const [floorNumber, group] of this.floorGroups) {
+      group.visible = true;
+      group.position.y = 0;
+      group.rotation.y = 0;
+      const plate = this.floorPlates.get(floorNumber);
+      if (plate) plate.visible = false;
+    }
+    if (this.site?.group) this.site.group.visible = this.siteInitialVisibility;
+    this.interiorRoot.visible = false;
+    this.floorHighlight.visible = false;
+    this.rotateEnabled = false;
+    this.mode = 'exterior';
+    this.renderer.localClippingEnabled = this.originalLocalClipping;
   }
 
   _updateRoomZones() {
@@ -876,8 +914,8 @@ export class BuildingExplorer {
     this.renderer.domElement.removeEventListener('pointercancel', this._pointerCancel, { capture: true });
     window.removeEventListener('keydown', this._keyDown, { capture: true });
     window.removeEventListener('keyup', this._keyUp, { capture: true });
+    this._restoreDefaultVisuals();
     if (this.savedExterior) {
-      this._restoreDefaultVisuals();
       this.camera.position.copy(this.savedExterior.position);
       this.controls.target.copy(this.savedExterior.target);
       this.controls.enabled = this.savedExterior.enabled;
