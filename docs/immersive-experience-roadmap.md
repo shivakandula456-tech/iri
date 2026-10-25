@@ -29,12 +29,15 @@
 4. Prototype WebGPU in a separate experimental path only after checking compatibility with the pinned release and avoiding duplicate Three.js engine copies. Do not switch production renderer simply because WebGPU is newer.
 5. Keep a readable fallback that preserves the exterior model and camera controls when optional effects are unavailable.
 
-## Optional AR experiment
+## Implemented optional AR preview (browser testing pending)
 
-- Treat WebXR as opt-in, not a startup requirement.
-- Require HTTPS and a compatible device/browser; feature-detect runtime before showing an AR action.
-- Use an approved, scale-correct GLB model only. The current procedural reconstruction must not be silently represented as a measured or architect-approved model.
-- When AR is unavailable, keep the ordinary 3D viewer fully functional.
+- WebXR is opt-in and is not required for startup.
+- The AR button is shown only after the browser reports immersive-AR support in a secure context.
+- The current conceptual procedural tower is placed as a miniature (not claimed as an approved scale model) after a hit-test surface is detected; tapping again repositions it.
+- The site/horizon and sky background are hidden during placement, and the original scene is restored on session end.
+- Rendering uses the base WebGL path during XR; traditional post-processing is skipped. Failed session start must return to the normal viewer.
+
+**Verification status:** implementation is committed on the feature branch; test on a compatible HTTPS device is pending.
 
 ## Release gate
 
