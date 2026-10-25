@@ -2006,3 +2006,61 @@ body[data-mode="free"] .hud-hint {
     bottom: calc(120px + var(--safe-bottom));
   }
 }
+
+
+.render-toggle {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 11px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--ivory-soft);
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(244, 238, 224, 0.12);
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.render-toggle:hover {
+  background: rgba(255, 255, 255, 0.065);
+  border-color: rgba(211, 176, 124, 0.28);
+}
+
+.render-toggle-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.render-toggle-copy strong {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.render-toggle-copy small {
+  color: var(--muted);
+  font-size: 8px;
+  line-height: 1.3;
+}
+
+.render-toggle-state {
+  min-width: 31px;
+  padding: 4px 6px;
+  color: var(--gold);
+  background: rgba(211, 176, 124, 0.1);
+  border: 1px solid rgba(211, 176, 124, 0.2);
+  border-radius: 999px;
+  font-size: 8px;
+  text-align: center;
+}
+
+.render-toggle[aria-pressed="false"] .render-toggle-state {
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.035);
+  border-color: var(--line);
+}
