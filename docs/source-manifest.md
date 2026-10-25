@@ -45,6 +45,9 @@ The immersive interaction modules are local source files rather than external se
 - `js/facade-inspector.js` — raycast-based feature selection and temporary geometric annotation.
 - `js/blueprint-controller.js` — reversible edge-only rendering over the same model geometry, restoring the original mesh materials and visibility.
 - `js/camera-director.js` — camera path, presets, intro timing and interaction handoff.
+- `js/geometry-kit.js` — tags eligible procedural tower batches into floor-level groups while preserving instanced rendering where possible.
+- `js/building-explorer.js` — floor rail integration, raycast-based floor/room selection, exploder/cutaway/isolation modes, illustrative apartment, schematic plan interaction, walk-through controls, optional per-floor GLB loading and cleanup.
+- `INTERIOR_ASSETS` is an intentionally empty map by default. No approved apartment interior `.glb` or verified apartment drawing was supplied.
 
 
 The immersive feature branch vendors the optional post-processing modules directly from the official Three.js repository at the `r164` release/tag, matching the locally bundled runtime engine:
