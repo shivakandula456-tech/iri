@@ -5,29 +5,48 @@ import { createCanvasTexture, mulberry32, randRange } from './utils.js';
 const _sun = new THREE.Vector3(...SUN_DIRECTION).normalize();
 
 /**
- * Paints an equirectangular sunset. Using a background map rather than a
- * screen-space sky shader keeps the sun's position consistent with the
- * directional light and gives us a free image-based lighting source.
+ * Blend two CSS hex colours without introducing a DOM/style dependency.
  */
-function paintSky(ctx, width, height) {
+function mixHex(a, b, amount) {
+  return `#${new THREE.Color(a).lerp(new THREE.Color(b), THREE.MathUtils.clamp(amount, 0, 1)).getHexString()}`;
+}
+
+/**
+ * Paint an equirectangular sky for a selected presentation time. This remains
+ * a conceptual atmosphere, not a geographically exact solar ephemeris.
+ */
+function paintSky(ctx, width, height, hour = 18) {
+  const daylight = THREE.MathUtils.clamp(
+    THREE.MathUtils.smoothstep(hour, 7, 12.5) *
+    (1 - THREE.MathUtils.smoothstep(hour, 16.5, 20)),
+    0, 1
+  );
+  const sunset = THREE.MathUtils.clamp(1 - Math.abs(hour - 18) / 3.8, 0, 1);
+  const twilight = THREE.MathUtils.smoothstep(hour, 18.2, 20);
+
+  const top = mixHex(mixHex('#10263e', '#4e89b7', daylight), '#0d2039', twilight * 0.86);
+  const upper = mixHex(mixHex('#294a64', '#a6cce2', daylight), '#273b5b', twilight * 0.72);
+  const horizon = mixHex(mixHex('#d9a47d', '#e5eef0', daylight), '#626e8a', twilight * 0.82);
+  const warmHorizon = mixHex(horizon, '#f3a56f', sunset * 0.76);
+  const lower = mixHex(mixHex('#53453d', '#dfe5e3', daylight), '#1c2b42', twilight * 0.84);
+
   const sky = ctx.createLinearGradient(0, 0, 0, height);
-  sky.addColorStop(0.0, '#102a43');
-  sky.addColorStop(0.16, '#1b3a56');
-  sky.addColorStop(0.31, '#3f5f78');
-  sky.addColorStop(0.42, '#8e8d83');
-  sky.addColorStop(0.475, '#d7a47d');
-  sky.addColorStop(0.5, '#efb783');
-  sky.addColorStop(0.535, '#a98469');
-  sky.addColorStop(0.64, '#5b584a');
-  sky.addColorStop(1.0, '#262b28');
+  sky.addColorStop(0.0, top);
+  sky.addColorStop(0.16, upper);
+  sky.addColorStop(0.31, mixHex(upper, horizon, 0.24));
+  sky.addColorStop(0.42, horizon);
+  sky.addColorStop(0.475, warmHorizon);
+  sky.addColorStop(0.5, mixHex(warmHorizon, '#f5c18d', sunset * 0.62));
+  sky.addColorStop(0.535, mixHex(horizon, lower, 0.35));
+  sky.addColorStop(0.64, lower);
+  sky.addColorStop(1.0, mixHex(lower, '#111b29', twilight * 0.62));
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, width, height);
 
-  // Sun position in equirectangular coordinates.
-  const u = Math.atan2(_sun.z, _sun.x) / (Math.PI * 2) + 0.5;
-  const v = Math.asin(THREE.MathUtils.clamp(_sun.y, -1, 1)) / Math.PI + 0.5;
-  const sunX = u * width;
-  const sunY = (1 - v) * height;
+  // The disc travels across the horizon as the user moves the time slider.
+  const progress = THREE.MathUtils.clamp((hour - 7) / 13, 0, 1);
+  const sunX = width * (0.12 + progress * 0.74);
+  const sunY = height * (0.48 - Math.sin(progress * Math.PI) * 0.2);
 
   // Broad warm atmospheric band around the sun's altitude.
   const band = ctx.createLinearGradient(0, sunY - height * 0.17, 0, sunY + height * 0.12);
@@ -113,7 +132,9 @@ function paintSky(ctx, width, height) {
 }
 
 export function createSky(scene, renderer) {
-  const texture = createCanvasTexture(2048, 1024, paintSky, {
+  const texture = createCanvasTexture(2048, 1024, (ctx, width, height) => {
+    paintSky(ctx, width, height, 18);
+  }, {
     wrap: false,
     anisotropy: Math.min(8, renderer.capabilities.getMaxAnisotropy())
   });
@@ -122,22 +143,39 @@ export function createSky(scene, renderer) {
   scene.backgroundIntensity = 1;
   scene.backgroundBlurriness = 0;
 
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  pmrem.compileEquirectangularShader();
-  const envTarget = pmrem.fromEquirectangular(texture);
-  pmrem.dispose();
-  scene.environment = envTarget.texture;
-  scene.environmentIntensity = 0.85;
+  let envTarget;
+  function rebuildEnvironment() {
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    pmrem.compileEquirectangularShader();
+    const nextTarget = pmrem.fromEquirectangular(texture);
+    pmrem.dispose();
+    const previousTarget = envTarget;
+    envTarget = nextTarget;
+    scene.environment = envTarget.texture;
+    scene.environmentIntensity = 0.85;
+    previousTarget?.dispose();
+  }
+  rebuildEnvironment();
 
-  const disposables = [texture, envTarget.texture];
   return {
     texture,
-    environment: envTarget.texture,
+    get environment() {
+      return envTarget?.texture || null;
+    },
     sunDirection: _sun.clone(),
+    setTimeOfDay(hour, { refreshEnvironment = false } = {}) {
+      const canvas = texture.image;
+      const context = canvas?.getContext?.('2d');
+      if (!context) return;
+      paintSky(context, canvas.width, canvas.height, hour);
+      texture.needsUpdate = true;
+      if (refreshEnvironment) rebuildEnvironment();
+    },
     dispose() {
       if (scene.background === texture) scene.background = null;
-      if (scene.environment === envTarget.texture) scene.environment = null;
-      disposables.forEach((item) => item.dispose());
+      if (scene.environment === envTarget?.texture) scene.environment = null;
+      texture.dispose();
+      envTarget?.dispose();
     }
   };
 }
