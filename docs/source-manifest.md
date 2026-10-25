@@ -36,6 +36,19 @@ The official project page states the location as Mundhwa, Pune; configurations a
 
 The official page currently shows a June 2026 possession date, which has passed as of this audit date. The page also pairs Phase I/Phase II RERA identifiers differently between its paragraph and linked labels. Neither the possession status nor RERA IDs are asserted in this viewer pending developer confirmation.
 
+## Added runtime rendering modules
+
+The immersive feature branch vendors the optional post-processing modules directly from the official Three.js repository at the `r164` release/tag, matching the locally bundled runtime engine:
+
+- Upstream repository: https://github.com/mrdoob/three.js
+- Upstream release path: `examples/jsm/postprocessing/` and `examples/jsm/shaders/`
+- Local destinations: `assets/vendor/postprocessing/` and `assets/vendor/shaders/`
+- Modules include EffectComposer, Pass, RenderPass, ShaderPass, OutputPass, UnrealBloomPass, MaskPass, CopyShader, LuminosityHighPassShader and OutputShader.
+- The imports are routed through the existing import map, so the normal rendering path does not fetch additional modules from a CDN.
+- The post-processing path is optional and falls back to direct WebGL rendering if it cannot initialize or later encounters a rendering exception.
+
+Source code is retained from the pinned upstream release. Review the upstream Three.js licence and include its applicable notices with redistributed code.
+
 ## Rights and release requirements
 
 The images and brand assets remain subject to the rights of Anandtara and other relevant rights holders. Confirm permission for reproduction and external deployment. Do not redistribute the reference-image folder publicly unless the rights holder has approved it.
