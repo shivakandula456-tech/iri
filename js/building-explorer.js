@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BUILDING, ROOF_Y } from './config.js';
+import { BUILDING, HALF_D, ROOF_Y } from './config.js';
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const easeInOutCubic = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -67,8 +67,10 @@ export class BuildingExplorer {
     this.interiorLoadToken = 0;
     this.siteInitialVisibility = site?.group?.visible ?? true;
     this.originalLocalClipping = renderer.localClippingEnabled;
-    this.clipPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -6.0);
+    this.cutDepth = 6.0;
+    this.clipPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -this.cutDepth);
     this.clipRecords = [];
+    this.xrayRecords = [];
     this.floorGroups = new Map(building.floorGroups || []);
     this.staticChildren = [];
     this.floorPlates = new Map();
@@ -347,7 +349,7 @@ export class BuildingExplorer {
       this.mode = 'floor';
       this._applyVisualMode();
       this._flyTo(this._floorCameraPosition(), this._floorTarget(), 850);
-    } else if (this.mode === 'cutaway') {
+    } else if (this.mode === 'cutaway' || this.mode === 'xray') {
       this._applyVisualMode();
       this._flyTo(this._floorCameraPosition(), this._floorTarget(), 850);
     } else {
@@ -361,7 +363,7 @@ export class BuildingExplorer {
 
   setMode(mode) {
     if (!this.active) return;
-    const allowed = new Set(['exterior', 'cutaway', 'exploded', 'floor']);
+    const allowed = new Set(['exterior', 'xray', 'cutaway', 'exploded', 'floor']);
     if (!allowed.has(mode)) return;
     this.walking = false;
     this.rotateEnabled = false;
@@ -377,8 +379,15 @@ export class BuildingExplorer {
         13
       );
     } else {
-      this._flyTo(this._floorCameraPosition(), this._floorTarget(), 1000, mode === 'cutaway' ? 5 : 3);
+      this._flyTo(this._floorCameraPosition(), this._floorTarget(), 1000, mode === 'cutaway' || mode === 'xray' ? 5 : 3);
     }
+    this._emitState();
+  }
+
+  setCutDepth(depth) {
+    if (!this.active) return;
+    this.cutDepth = clamp(Number(depth) || 6, 0.2, HALF_D - 0.2);
+    this.clipPlane.constant = -this.cutDepth;
     this._emitState();
   }
 
@@ -477,7 +486,7 @@ export class BuildingExplorer {
   }
 
   toggleRotate() {
-    if (!this.active || this.walking || !['floor', 'cutaway', 'exploded'].includes(this.mode)) return;
+    if (!this.active || this.walking || !['floor', 'xray', 'cutaway', 'exploded'].includes(this.mode)) return;
     this.rotateEnabled = !this.rotateEnabled;
     if (this.rotateEnabled) this.controls.enabled = false;
     else this.controls.enabled = true;
@@ -525,6 +534,7 @@ export class BuildingExplorer {
   _applyVisualMode() {
     this._stopWalk();
     this._clearClipping();
+    this._clearXray();
     this.controls.enabled = true;
     for (const { object, visible } of this.staticChildren) object.visible = visible;
     for (const [floorNumber, group] of this.floorGroups) {
@@ -542,7 +552,14 @@ export class BuildingExplorer {
     this.floorHighlight.visible = this.mode !== 'exploded';
     this._updateFloorHighlight();
 
-    if (this.mode === 'cutaway') {
+    if (this.mode === 'xray') {
+      this._applyXray();
+      this.interiorRoot.visible = true;
+      this.interiorRoot.position.y = this._floorBottom();
+      const plate = this.floorPlates.get(this.selectedFloor);
+      if (plate) plate.visible = true;
+      this.floorHighlight.visible = false;
+    } else if (this.mode === 'cutaway') {
       this._applyClipping({ selectedFloorOnly: true });
       this.interiorRoot.visible = true;
       this.interiorRoot.position.y = this._floorBottom();
@@ -585,6 +602,37 @@ export class BuildingExplorer {
       this.floorHighlight.visible = false;
     }
     this._updateRoomZones();
+  }
+
+  _applyXray() {
+    if (this.xrayRecords.length) return;
+    const selectedGroup = this.floorGroups.get(this.selectedFloor);
+    if (!selectedGroup) return;
+    selectedGroup.traverse((object) => {
+      if (!object.isMesh || !object.material) return;
+      const original = object.material;
+      const fade = (material) => {
+        const clone = material.clone();
+        clone.transparent = true;
+        clone.opacity = Math.min(Number.isFinite(material.opacity) ? material.opacity : 1, 0.18);
+        clone.depthWrite = false;
+        clone.side = THREE.DoubleSide;
+        clone.needsUpdate = true;
+        return clone;
+      };
+      const cloned = Array.isArray(original) ? original.map(fade) : fade(original);
+      object.material = cloned;
+      this.xrayRecords.push({ object, original, cloned });
+    });
+  }
+
+  _clearXray() {
+    for (const record of this.xrayRecords) {
+      record.object.material = record.original;
+      if (Array.isArray(record.cloned)) record.cloned.forEach((material) => material.dispose());
+      else record.cloned.dispose();
+    }
+    this.xrayRecords.length = 0;
   }
 
   _applyClipping({ selectedFloorOnly = false } = {}) {
@@ -772,7 +820,7 @@ export class BuildingExplorer {
       this.rotatePointer.x = event.clientX;
       const selectedGroup = this.floorGroups.get(this.selectedFloor);
       if (selectedGroup && this.mode === 'exploded') selectedGroup.rotation.y += dx * 0.008;
-      else if (selectedGroup && (this.mode === 'floor' || this.mode === 'cutaway')) selectedGroup.rotation.y += dx * 0.008;
+      else if (selectedGroup && (this.mode === 'floor' || this.mode === 'cutaway' || this.mode === 'xray')) selectedGroup.rotation.y += dx * 0.008;
       if (this.interiorRoot.visible) this.interiorRoot.rotation.y += dx * 0.008;
       this.pointerDragged = this.pointerDragged || Math.abs(dx) > 1;
       return;
@@ -945,6 +993,8 @@ export class BuildingExplorer {
       rotateEnabled: this.rotateEnabled,
       walking: this.walking,
       selectedRoom: this.selectedRoom,
+      cutDepth: this.cutDepth,
+      cutDistanceFromFront: Number((HALF_D - this.cutDepth).toFixed(2)),
       roomTitle: selected?.definition.label || 'Room',
       roomDescription: selected?.definition.description || '',
       floorLabel: `Floor ${this.selectedFloor}`,
@@ -971,6 +1021,7 @@ export class BuildingExplorer {
   dispose() {
     this._stopWalk();
     this._clearClipping();
+    this._clearXray();
     this.renderer.domElement.removeEventListener('pointerdown', this._pointerDown, { capture: true });
     this.renderer.domElement.removeEventListener('pointermove', this._pointerMove, { capture: true });
     this.renderer.domElement.removeEventListener('pointerup', this._pointerUp, { capture: true });
