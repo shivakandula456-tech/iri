@@ -26,6 +26,7 @@ import { GuidedTour } from './js/guided-tour.js';
 import { LightingController } from './js/lighting-controller.js';
 import { FacadeInspector } from './js/facade-inspector.js';
 import { BlueprintController } from './js/blueprint-controller.js';
+import { BuildingExplorer } from './js/building-explorer.js';
 import { FreeLookController } from './js/free-look.js';
 import { QualityController } from './js/quality.js';
 import { disposeSceneResources } from './js/utils.js';
@@ -46,6 +47,7 @@ let guidedTour;
 let lightingController;
 let facadeInspector;
 let blueprintController;
+let buildingExplorer;
 let site;
 let arSession = null;
 let arHitTestSource = null;
@@ -503,6 +505,10 @@ function setupControllers() {
 
 function setMode(nextMode) {
   if (!ready || renderer?.xr?.isPresenting) return;
+  if (buildingExplorer?.active) {
+    ui.showToast('Return to the exterior view before switching camera navigation modes.');
+    return;
+  }
   if (guidedTour?.active) guidedTour.stop({ reason: 'manual' });
   const next = nextMode === 'free' ? 'free' : 'orbit';
   if (next === mode) return;
@@ -537,6 +543,10 @@ function setMode(nextMode) {
 
 function goToPreset(name) {
   if (!ready || renderer?.xr?.isPresenting) return;
+  if (buildingExplorer?.active) {
+    ui.showToast('Return to the exterior view to use the main camera presets.');
+    return;
+  }
   if (guidedTour?.active) guidedTour.stop({ reason: 'manual' });
   if (mode === 'free') setMode('orbit');
   if (director.isIntroPlaying) director.skipIntro();
@@ -546,6 +556,10 @@ function goToPreset(name) {
 
 function replayIntro() {
   if (!ready || renderer?.xr?.isPresenting) return;
+  if (buildingExplorer?.active) {
+    ui.showToast('Return to the exterior view before replaying the signature reveal.');
+    return;
+  }
   if (guidedTour?.active) guidedTour.stop({ reason: 'intro' });
   if (mode === 'free') setMode('orbit');
   if (director.isTransitioning) director.interrupt();
@@ -565,6 +579,7 @@ function skipIntro() {
 
 function toggleFacadeInspection() {
   if (!ready || !facadeInspector || renderer?.xr?.isPresenting) return;
+  if (buildingExplorer?.active) return;
   if (mode === 'free') setMode('orbit');
   if (guidedTour?.active) guidedTour.stop({ reason: 'manual' });
   if (!facadeInspector.enabled && blueprintController?.enabled) {
@@ -587,6 +602,7 @@ function clearFacadeInspection() {
 
 function toggleBlueprint() {
   if (!ready || !blueprintController || renderer?.xr?.isPresenting) return;
+  if (buildingExplorer?.active) return;
   if (guidedTour?.active) guidedTour.stop({ reason: 'blueprint' });
   if (facadeInspector?.enabled) {
     facadeInspector.setEnabled(false);
@@ -622,6 +638,7 @@ function skipGuidedTour() {
 
 function toggleGuidedTour() {
   if (!ready || !guidedTour || renderer?.xr?.isPresenting) return;
+  if (buildingExplorer?.active) return;
   if (guidedTour.active) {
     if (director.isTransitioning) director.interrupt();
     guidedTour.stop({ reason: 'manual' });
@@ -636,6 +653,14 @@ function toggleGuidedTour() {
 function onKeyDown(event) {
   if (!ready) return;
   if (ui.isSheetOpen()) return;
+  if (buildingExplorer?.active) {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      if (buildingExplorer.mode === 'interior') buildingExplorer.returnToFloor();
+      else buildingExplorer.close();
+    }
+    return;
+  }
   if (event.metaKey || event.ctrlKey || event.altKey) return;
   const target = event.target;
   if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
@@ -684,6 +709,66 @@ function onKeyDown(event) {
     event.preventDefault();
     goToPreset('home');
   }
+}
+
+function openBuildingExplorer() {
+  if (!ready || !buildingExplorer || renderer?.xr?.isPresenting) return;
+  if (buildingExplorer.active) {
+    buildingExplorer.close();
+    return;
+  }
+  if (mode === 'free') setMode('orbit');
+  if (guidedTour?.active) guidedTour.stop({ reason: 'building-explorer' });
+  if (facadeInspector?.enabled) {
+    facadeInspector.setEnabled(false);
+    ui.setInspectionState(false);
+    ui.clearFacadeInfo();
+  }
+  if (blueprintController?.enabled) {
+    blueprintController.setEnabled(false);
+    ui.setBlueprintState(false);
+  }
+  if (director?.isIntroPlaying) director.skipIntro();
+  if (director?.isTransitioning) director.interrupt();
+  buildingExplorer.open();
+  ui.showToast('IRIS Inside opened. Select a floor or tap the building.');
+}
+
+function closeBuildingExplorer() {
+  if (!buildingExplorer?.active) return;
+  buildingExplorer.close();
+}
+
+function setBuildingExplorerMode(nextMode) {
+  if (!buildingExplorer?.active) return;
+  buildingExplorer.setMode(nextMode);
+}
+
+function enterApartmentExplorer() {
+  if (!buildingExplorer?.active) return;
+  buildingExplorer.enterApartment();
+}
+
+function returnToExplorerFloor() {
+  buildingExplorer?.returnToFloor();
+}
+
+function reassembleExplorerTower() {
+  buildingExplorer?.reassemble();
+}
+
+function toggleExplorerFloorRotation() {
+  buildingExplorer?.toggleRotate();
+}
+
+function selectExplorerRoom(roomId) {
+  if (!buildingExplorer?.active) return;
+  if (buildingExplorer.walking) buildingExplorer.visitRoom(roomId);
+  else buildingExplorer.selectRoom(roomId);
+}
+
+function setExplorerWalkDirection(direction, active) {
+  buildingExplorer?.setWalkDirection(direction, active);
 }
 
 function bindEvents() {
@@ -751,14 +836,16 @@ function animate(timestamp, xrFrame) {
   quality?.sample(rawDt, !director.isIntroPlaying && !presentingAR);
   if (presentingAR) {
     window.__IRIS_AR_UPDATE__?.(xrFrame);
+  } else if (buildingExplorer?.active) {
+    buildingExplorer.update(dt);
   } else if (mode === 'free' && freeLook.enabled) {
     freeLook.update(dt);
   } else {
     director.update(dt);
   }
   if (!presentingAR) {
-    guidedTour?.update(dt, Boolean(director?.isTransitioning));
-    if (site) site.update(dt);
+    if (!buildingExplorer?.active) guidedTour?.update(dt, Boolean(director?.isTransitioning));
+    if (site && (!buildingExplorer?.active || site.group.visible)) site.update(dt);
   }
   renderFrame(dt);
 }
@@ -775,6 +862,16 @@ async function boot() {
     onGuidedSkip: () => skipGuidedTour(),
     onInspectToggle: () => toggleFacadeInspection(),
     onBlueprintToggle: () => toggleBlueprint(),
+    onExplorerToggle: () => openBuildingExplorer(),
+    onExplorerClose: () => closeBuildingExplorer(),
+    onExplorerFloor: (floor) => buildingExplorer?.selectFloor(floor),
+    onExplorerMode: (next) => setBuildingExplorerMode(next),
+    onExplorerEnter: () => enterApartmentExplorer(),
+    onExplorerReturnFloor: () => returnToExplorerFloor(),
+    onExplorerReassemble: () => reassembleExplorerTower(),
+    onExplorerRotate: () => toggleExplorerFloorRotation(),
+    onExplorerRoom: (room) => selectExplorerRoom(room),
+    onExplorerWalkDirection: (direction, active) => setExplorerWalkDirection(direction, active),
     onClearInspection: () => clearFacadeInspection(),
     onSkipIntro: () => skipIntro(),
     onSheetOpen: () => {
@@ -858,6 +955,16 @@ async function boot() {
     await nextFrame();
 
     setupControllers();
+    buildingExplorer = new BuildingExplorer({
+      scene,
+      camera,
+      controls,
+      renderer,
+      building,
+      site,
+      onStateChange: (state) => ui.setExplorerState(state),
+      onToast: (message) => ui.showToast(message)
+    });
     bindEvents();
     setupPostProcessing();
     ui.setMode('orbit');
@@ -904,6 +1011,7 @@ async function boot() {
       lightingController,
       facadeInspector,
       blueprintController,
+      buildingExplorer,
       site,
       building,
       sky,
@@ -955,6 +1063,13 @@ async function boot() {
           guidedTourActive: Boolean(guidedTour?.active),
           guidedTourPaused: Boolean(guidedTour?.paused),
           blueprintActive: Boolean(blueprintController?.enabled),
+          buildingExplorerActive: Boolean(buildingExplorer?.active),
+          buildingExplorerMode: buildingExplorer?.mode || 'exterior',
+          selectedFloor: buildingExplorer?.selectedFloor || null,
+          selectedRoom: buildingExplorer?.selectedRoom || null,
+          explorerWalking: Boolean(buildingExplorer?.walking),
+          explorerRotating: Boolean(buildingExplorer?.rotateEnabled),
+          floorLayerCount: buildingExplorer?.floorGroups?.size || 0,
           facadeInspectionActive: Boolean(facadeInspector?.enabled),
           arPresenting: Boolean(renderer.xr?.isPresenting),
           arModelPlaced: Boolean(arPlaced),
@@ -987,6 +1102,9 @@ async function boot() {
 
 window.addEventListener('beforeunload', () => {
   disposed = true;
+  if (buildingExplorer) {
+    try { buildingExplorer.dispose(); } catch { /* best-effort visual cleanup */ }
+  }
   if (blueprintController) {
     try { blueprintController.dispose(); } catch { /* best-effort visual cleanup */ }
   }
