@@ -41,13 +41,15 @@ For all pending rows, record the browser/OS, actual outcome, notes and retest ou
 
 | Q | Facade inspection | Inspect mode selects real building meshes; selection annotation and outline show; drag still moves camera; closing or disabling inspection removes outline resources | Pending — not run on this branch |
 
+| R | Cinematic rendering | Local post-processing modules resolve; bloom can be toggled; scene remains visible if composer initialization fails; resizing and adaptive quality keep the composer buffers in sync | Pending — not run on this branch |
+
 ## Testing environment limitation
 
 The test environment returned `ERR_BLOCKED_BY_ADMINISTRATOR` for navigation to both a local static HTTP URL and the local `file://` URL. A separate headless Chromium run also failed to initialize its software graphics context. Therefore, no interactive runtime test is claimed as passed here.
 
 ## Release gate
 
-Do not mark this concept acceptance-complete until tests A–Q have been run in a normal browser, actual defects have been fixed, and the affected tests have been repeated. Save current screenshots and the final browser-console/network notes under `docs/evidence/` after that test pass.
+Do not mark this concept acceptance-complete until tests A–R have been run in a normal browser, actual defects have been fixed, and the affected tests have been repeated. Save current screenshots and the final browser-console/network notes under `docs/evidence/` after that test pass.
 
 
 ## Detailed feature tests for the immersive branch
@@ -67,3 +69,10 @@ Do not mark this concept acceptance-complete until tests A–Q have been run in 
 - Confirm each result identifies its side/floor context and calls out that details are conceptual/inferred.
 - Drag after enabling inspection; it must orbit rather than select.
 - Click the empty background and close the info panel; both should clear the outline and release its geometry/material.
+
+
+### Cinematic rendering
+- Confirm the local post-processing modules load from the same pinned Three.js r164 engine.
+- Toggle Cinematic finish off and on; compare highlights without loss of facade detail.
+- Resize the window and allow adaptive quality to change resolution; confirm composer output stays aligned to the canvas.
+- Simulate a post-processing initialization failure in a test copy and verify the base renderer remains usable.
