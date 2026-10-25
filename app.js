@@ -1030,6 +1030,15 @@ async function boot() {
       replayIntro,
       toggleGuidedTour,
       toggleFacadeInspection,
+      openBuildingExplorer,
+      closeBuildingExplorer,
+      setBuildingExplorerMode,
+      enterApartmentExplorer,
+      returnToExplorerFloor,
+      reassembleExplorerTower,
+      toggleExplorerFloorRotation,
+      selectExplorerRoom,
+      setExplorerWalkDirection,
       startIntro(options = {}) {
         if (mode === 'free') setMode('orbit');
         director.startIntro({ reducedMotion: Boolean(options.reducedMotion) });
@@ -1074,6 +1083,7 @@ async function boot() {
           explorerWalking: Boolean(buildingExplorer?.walking),
           explorerRotating: Boolean(buildingExplorer?.rotateEnabled),
           floorLayerCount: buildingExplorer?.floorGroups?.size || 0,
+          explorerState: buildingExplorer?.getState?.() || null,
           facadeInspectionActive: Boolean(facadeInspector?.enabled),
           arPresenting: Boolean(renderer.xr?.isPresenting),
           arModelPlaced: Boolean(arPlaced),
