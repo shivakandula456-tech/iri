@@ -283,13 +283,14 @@ function configureARButton() {
       arReticle.visible = false;
       scene.add(arReticle);
 
+      arSession = session;
+      await renderer.xr.setSession(session);
+      // Listen after the WebXR manager's own end handler so its internal state
+      // is released before this app restores the ordinary scene.
+      session.addEventListener('end', restoreARScene, { once: true });
+      session.addEventListener('select', placeARModel);
       arViewerSpace = await session.requestReferenceSpace('viewer');
       arHitTestSource = await session.requestHitTestSource({ space: arViewerSpace });
-      session.addEventListener('select', placeARModel);
-      arSession = session;
-
-      await renderer.xr.setSession(session);
-      session.addEventListener('end', restoreARScene, { once: true });
       document.body.classList.add('ar-active');
       setLabel('AR active', true);
       ui.showToast('Move your phone to find a surface, then tap to place the miniature.');
