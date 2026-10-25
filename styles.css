@@ -1707,3 +1707,163 @@ body[data-mode="free"] .hud-hint {
     animation: none !important;
   }
 }
+
+
+/* ------------------------------------------------------------------ */
+/* Guided exploration and live atmosphere controls                    */
+/* ------------------------------------------------------------------ */
+
+.guided-tour-button.is-tour-active {
+  color: var(--ivory);
+  border-color: rgba(211, 176, 124, 0.42);
+  background: rgba(133, 93, 47, 0.28);
+}
+
+.guided-tour-button.is-tour-active svg {
+  color: var(--gold);
+}
+
+.light-tool {
+  position: absolute;
+  z-index: 18;
+  top: calc(78px + var(--safe-top));
+  right: clamp(18px, 3.2vw, 44px);
+  width: min(286px, calc(100vw - 36px));
+  color: var(--ivory-soft);
+  background: rgba(9, 16, 21, 0.82);
+  border: 1px solid rgba(244, 238, 224, 0.15);
+  border-radius: 13px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  font-size: 9px;
+}
+
+.light-tool summary {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  list-style: none;
+  cursor: pointer;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.light-tool summary::-webkit-details-marker {
+  display: none;
+}
+
+.light-tool summary svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 1.35;
+  stroke-linecap: round;
+}
+
+.light-tool summary strong {
+  margin-left: auto;
+  color: var(--gold);
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.light-tool[open] summary {
+  border-bottom: 1px solid rgba(244, 238, 224, 0.1);
+}
+
+.light-tool-body {
+  padding: 12px 13px 13px;
+}
+
+.light-tool-body label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--ivory);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.light-tool-body input[type="range"] {
+  width: 100%;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--gold);
+  cursor: ew-resize;
+  touch-action: pan-y;
+}
+
+.light-time-endpoints {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 3px;
+  color: var(--muted-2);
+  font-size: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.light-tool-note,
+.light-tool-body p {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.55;
+  letter-spacing: 0.015em;
+}
+
+@media (max-width: 760px) {
+  .top-actions {
+    gap: 5px;
+  }
+
+  .top-actions .guided-tour-button {
+    width: 36px;
+    padding: 0;
+  }
+
+  .top-actions .guided-tour-button span {
+    display: none;
+  }
+
+  .light-tool {
+    top: calc(75px + var(--safe-top));
+    right: 12px;
+    width: min(224px, calc(100vw - 24px));
+  }
+
+  .light-tool summary {
+    min-height: 36px;
+    gap: 6px;
+    padding: 0 9px;
+    font-size: 8px;
+  }
+
+  .light-tool summary strong {
+    font-size: 7.5px;
+  }
+
+  .light-tool-body {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 420px) {
+  .top-actions .guided-tour-button {
+    width: 32px;
+    height: 34px;
+  }
+
+  .light-tool {
+    top: calc(70px + var(--safe-top));
+    right: 10px;
+    width: min(210px, calc(100vw - 20px));
+  }
+}
