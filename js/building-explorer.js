@@ -522,7 +522,7 @@ export class BuildingExplorer {
     this._updateFloorHighlight();
 
     if (this.mode === 'cutaway') {
-      this._applyClipping();
+      this._applyClipping({ selectedFloorOnly: true });
       this.interiorRoot.visible = true;
       this.interiorRoot.position.y = this._floorBottom();
       const plate = this.floorPlates.get(this.selectedFloor);
@@ -546,7 +546,7 @@ export class BuildingExplorer {
         const plate = this.floorPlates.get(floorNumber);
         if (plate) plate.visible = floorNumber === this.selectedFloor;
       }
-      this._applyClipping();
+      this._applyClipping({ selectedFloorOnly: true });
       this.interiorRoot.visible = true;
       this.interiorRoot.position.y = this._floorBottom();
       this.floorHighlight.visible = false;
@@ -558,7 +558,7 @@ export class BuildingExplorer {
         const plate = this.floorPlates.get(floorNumber);
         if (plate) plate.visible = floorNumber === this.selectedFloor;
       }
-      this._applyClipping();
+      this._applyClipping({ selectedFloorOnly: true });
       this.interiorRoot.visible = true;
       this.interiorRoot.position.y = this._floorBottom();
       this.floorHighlight.visible = false;
@@ -566,11 +566,16 @@ export class BuildingExplorer {
     this._updateRoomZones();
   }
 
-  _applyClipping() {
+  _applyClipping({ selectedFloorOnly = false } = {}) {
     if (this.clipRecords.length) return;
     this.renderer.localClippingEnabled = true;
     this.building.group.traverse((object) => {
       if (!object.isMesh || !object.material) return;
+      if (selectedFloorOnly) {
+        let parent = object;
+        while (parent && !Number.isInteger(parent.userData?.floorNumber)) parent = parent.parent;
+        if (parent?.userData?.floorNumber !== this.selectedFloor) return;
+      }
       const original = object.material;
       const cloneOne = (material) => {
         const cloned = material.clone();
