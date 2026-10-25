@@ -45,3 +45,14 @@ The procedural model deliberately uses coherent repeated facade logic to fill th
 ## How to update the model later
 
 Most scale and layout assumptions are centralized in `js/config.js`; facade generation, roof details and entrance geometry live in `js/building.js`; site context lives in `js/site.js`. If an architect-approved model/drawing set becomes available, validate scale and orientation first, then replace or refine components without changing camera code unnecessarily. Update this file with the source and confidence for each material correction.
+
+
+## IRIS Inside: floor and interior assumptions
+
+The interactive floor rail is generated from `BUILDING.levels` in `js/config.js` and currently numbers the conceptual levels from 1 through 14. This number is a modelling convenience that follows the current visual estimate; it is not a verified official storey schedule.
+
+The procedural tower generator now groups eligible facade and inner-core instance batches by estimated floor. Elements that span multiple levels (for example some tall fins and roof elements) remain in shared/static groups and may not separate as a complete architectural BIM floor.
+
+The furnished sample apartment and the room selector in `js/building-explorer.js` are an illustrative interaction prototype. The living room, dining area, kitchen, bedroom, bathroom and balcony positions, partitions, furniture and schematic 2D plan are invented to demonstrate the interface. They are not inferred as factual floor-plan data and must not be presented as the actual Iris Residences layout. No approved apartment drawing or interior model was supplied.
+
+For an approved interior asset, place a licensed `.glb` under the static site, add its relative path to `INTERIOR_ASSETS` by floor number and verify its scale, origin, orientation, visible room tags and unit-plan alignment. The current map is empty. Imported interior assets still require visual review and appropriate room metadata before production use.
