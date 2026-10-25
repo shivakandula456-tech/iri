@@ -870,6 +870,7 @@ async function boot() {
     onExplorerClose: () => closeBuildingExplorer(),
     onExplorerFloor: (floor) => buildingExplorer?.selectFloor(floor),
     onExplorerMode: (next) => setBuildingExplorerMode(next),
+    onExplorerCutDepth: (depth) => buildingExplorer?.setCutDepth(depth),
     onExplorerEnter: () => enterApartmentExplorer(),
     onExplorerReturnFloor: () => returnToExplorerFloor(),
     onExplorerReassemble: () => reassembleExplorerTower(),
