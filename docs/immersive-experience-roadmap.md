@@ -10,13 +10,15 @@
 - **Live atmosphere:** a 07:00–20:00 presentation slider updates the procedural sky, direct sunlight, hemisphere fill, fog and exposure. The environment reflection map is rebuilt after slider release, not on every input event.
 - **Static deployment:** preserve the existing vanilla JavaScript / Three.js architecture and locally bundled runtime. No backend, database, build pipeline or API key is required.
 
-## Next implementation slice: facade intelligence
+## Implemented in the current branch: facade intelligence
 
-- Use raycasting against the actual building group.
-- Classify selected surfaces conservatively by hit point, transformed face normal and current geometry metadata.
-- Show a restrained label and concise explanation, and provide a clear dismissal path.
-- Use a temporary lightweight outline; dispose outline geometry/material when selection changes.
-- Do not label inferred features as architect-verified. Do not create apartment-interior or floor-selection features.
+- Uses raycasting against the actual building group.
+- Classifies selected surfaces by hit point, transformed face normal, name hints and current geometry metadata.
+- Shows a restrained label and explanation with side/floor context, plus a temporary geometry outline.
+- Disposes the outline geometry/material when the selection changes or inspection is disabled.
+- Feature annotations deliberately identify the model as conceptual/inferred, not architect-verified. No apartment interior or floor-selection features are included.
+
+**Verification status:** source integration is committed on the feature branch; interactive selection and disposal behaviour remain pending in a real browser.
 
 ## Rendering investigation
 
