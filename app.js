@@ -102,7 +102,7 @@ function createRenderer() {
   const instance = new THREE.WebGLRenderer({
     canvas,
     antialias: true,
-    alpha: false,
+    alpha: true,
     depth: true,
     stencil: false,
     powerPreference: 'high-performance'
@@ -288,17 +288,17 @@ function configureARButton() {
       arViewerSpace = await session.requestReferenceSpace('viewer');
       arHitTestSource = await session.requestHitTestSource({ space: arViewerSpace });
       session.addEventListener('select', placeARModel);
-      session.addEventListener('end', restoreARScene, { once: true });
       arSession = session;
 
       await renderer.xr.setSession(session);
+      session.addEventListener('end', restoreARScene, { once: true });
       renderer.setAnimationLoop(animate);
       setLabel('AR active', true);
       ui.showToast('Move your phone to find a surface, then tap to place the miniature.');
     } catch (error) {
       console.warn('AR preview could not start.', error);
-      if (session && session !== arSession) {
-        try { await session.end(); } catch { /* no further recovery is needed */ }
+      if (session) {
+        try { await session.end(); } catch { /* the session may already have ended */ }
       }
       restoreARScene();
       setLabel('AR preview', false);
@@ -378,9 +378,14 @@ function configureARButton() {
       arReticle.visible = false;
       return;
     }
-    arReticle.matrix.fromArray(pose.transform.matrix);
-    arReticle.matrix.decompose(arReticle.position, arReticle.quaternion, arReticle.scale);
-    arReticle.matrixWorldNeedsUpdate = true;
+    const hitMatrix = new THREE.Matrix4().fromArray(pose.transform.matrix);
+    arReticle.position.setFromMatrixPosition(hitMatrix);
+    // A ring geometry lies in XY; rotate it onto a level surface. The hit-test
+    // pose supplies the placement position while this conceptual marker stays
+    // legible as a horizontal ring.
+    arReticle.rotation.set(-Math.PI / 2, 0, 0);
+    arReticle.updateMatrix();
+    arReticle.updateMatrixWorld(true);
     arReticle.visible = true;
   }
 
