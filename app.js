@@ -18,6 +18,8 @@ import { buildSite } from './js/site.js';
 import { createSky, addHorizonRidges } from './js/sky.js';
 import { createUI } from './js/ui.js';
 import { CameraDirector, PRESETS } from './js/camera-director.js';
+import { GuidedTour } from './js/guided-tour.js';
+import { LightingController } from './js/lighting-controller.js';
 import { FreeLookController } from './js/free-look.js';
 import { QualityController } from './js/quality.js';
 import { disposeSceneResources } from './js/utils.js';
@@ -32,6 +34,8 @@ let camera;
 let controls;
 let director;
 let freeLook;
+let guidedTour;
+let lightingController;
 let site;
 let building;
 let sky;
@@ -44,6 +48,18 @@ let mode = 'orbit';
 let clock;
 let disposed = false;
 let motionPreference = prefersReducedMotion.matches;
+
+function updateLightingLabel(hour) {
+  const label = document.getElementById('lightTimeLabel');
+  if (!label) return;
+  const wholeHour = Math.floor(hour);
+  const minute = Math.round((hour - wholeHour) * 60);
+  const period = hour < 9 ? 'Morning'
+    : hour < 14.5 ? 'Daylight'
+      : hour < 17 ? 'Afternoon'
+        : hour < 19.1 ? 'Sunset' : 'Blue hour';
+  label.textContent = `${period} · ${String(wholeHour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+}
 
 function showFatal(message, error) {
   const detail = error
@@ -166,7 +182,9 @@ function setupControllers() {
         ui.hideIntro();
       }
     },
-    onInteraction: () => {}
+    onInteraction: () => {
+      if (guidedTour?.active) guidedTour.stop({ reason: 'manual' });
+    }
   });
 
   freeLook = new FreeLookController({
@@ -178,11 +196,24 @@ function setupControllers() {
   });
   freeLook.attachMobileControls(ui.mobileControls);
 
+  guidedTour = new GuidedTour({
+    goToPreset: (name) => director.goTo(name),
+    onStateChange: (state) => {
+      ui.setGuidedTourState(state);
+      if (!state.active && state.completed) {
+        ui.showToast('Guided exterior exploration complete.');
+      } else if (!state.active && state.reason === 'manual') {
+        ui.showToast('Guided tour stopped. Camera control restored.');
+      }
+    }
+  });
+
   director.jumpTo('home');
 }
 
 function setMode(nextMode) {
   if (!ready) return;
+  if (guidedTour?.active) guidedTour.stop({ reason: 'manual' });
   const next = nextMode === 'free' ? 'free' : 'orbit';
   if (next === mode) return;
 
@@ -211,6 +242,7 @@ function setMode(nextMode) {
 
 function goToPreset(name) {
   if (!ready) return;
+  if (guidedTour?.active) guidedTour.stop({ reason: 'manual' });
   if (mode === 'free') setMode('orbit');
   if (director.isIntroPlaying) director.skipIntro();
   if (director.isTransitioning) director.interrupt();
@@ -219,6 +251,7 @@ function goToPreset(name) {
 
 function replayIntro() {
   if (!ready) return;
+  if (guidedTour?.active) guidedTour.stop({ reason: 'intro' });
   if (mode === 'free') setMode('orbit');
   if (director.isTransitioning) director.interrupt();
   director.startIntro({ reducedMotion: motionPreference });
@@ -227,6 +260,19 @@ function replayIntro() {
 
 function skipIntro() {
   if (director && director.isIntroPlaying) director.skipIntro();
+}
+
+function toggleGuidedTour() {
+  if (!ready || !guidedTour) return;
+  if (guidedTour.active) {
+    if (director.isTransitioning) director.interrupt();
+    guidedTour.stop({ reason: 'manual' });
+    return;
+  }
+  if (mode === 'free') setMode('orbit');
+  if (director.isIntroPlaying) director.skipIntro();
+  if (director.isTransitioning) director.interrupt();
+  guidedTour.start();
 }
 
 function onKeyDown(event) {
@@ -293,6 +339,24 @@ function bindEvents() {
   });
 
   window.addEventListener('keydown', onKeyDown);
+
+  const timeOfDay = document.getElementById('timeOfDay');
+  if (timeOfDay && lightingController) {
+    const applyTime = (refreshEnvironment) => {
+      lightingController.setTimeOfDay(Number(timeOfDay.value), { refreshEnvironment });
+    };
+    timeOfDay.addEventListener('input', () => applyTime(false));
+    timeOfDay.addEventListener('change', () => applyTime(true));
+  }
+
+  // Direct manipulation always takes priority over a running guided tour.
+  renderer.domElement.addEventListener('pointerdown', () => {
+    if (guidedTour?.active) guidedTour.stop({ reason: 'manual' });
+  }, { capture: true });
+  renderer.domElement.addEventListener('wheel', () => {
+    if (guidedTour?.active) guidedTour.stop({ reason: 'manual' });
+  }, { capture: true, passive: true });
+
   renderer.domElement.addEventListener('webglcontextlost', (event) => {
     event.preventDefault();
     if (ready) ui.showFatal('The graphics context was lost.', 'Reload the page to restart the exterior study.');
@@ -318,6 +382,7 @@ function animate() {
   } else {
     director.update(dt);
   }
+  guidedTour?.update(dt, Boolean(director?.isTransitioning));
   if (site) site.update(dt);
   renderer.render(scene, camera);
 }
@@ -328,6 +393,7 @@ async function boot() {
     onPreset: (name) => goToPreset(name),
     onMode: (next) => setMode(next),
     onReplayIntro: () => replayIntro(),
+    onGuidedTourToggle: () => toggleGuidedTour(),
     onSkipIntro: () => skipIntro(),
     onSheetOpen: () => {
       if (mode === 'free') setMode('orbit');
@@ -355,6 +421,13 @@ async function boot() {
     sky = createSky(scene, renderer);
     horizon = addHorizonRidges(scene);
     const lighting = addLighting();
+    lightingController = new LightingController({
+      renderer,
+      scene,
+      sky,
+      ...lighting,
+      onChange: (hour) => updateLightingLabel(hour)
+    });
     ui.setLoading(0.28, 'Mixing materials and light…');
     await nextFrame();
 
@@ -423,6 +496,8 @@ async function boot() {
       controls,
       director,
       freeLook,
+      guidedTour,
+      lightingController,
       site,
       building,
       sky,
@@ -435,6 +510,7 @@ async function boot() {
       setMode,
       goToPreset,
       replayIntro,
+      toggleGuidedTour,
       startIntro(options = {}) {
         if (mode === 'free') setMode('orbit');
         director.startIntro({ reducedMotion: Boolean(options.reducedMotion) });
@@ -468,6 +544,8 @@ async function boot() {
           freeLook: Boolean(freeLook?.enabled),
           pointerLocked: Boolean(freeLook?.pointerLocked),
           quality: quality?.state || null,
+          timeOfDay: lightingController?.getState?.().hour ?? null,
+          guidedTourActive: Boolean(guidedTour?.active),
           renderSize: {
             width: renderer.domElement.width,
             height: renderer.domElement.height,
