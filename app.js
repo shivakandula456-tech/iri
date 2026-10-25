@@ -917,7 +917,10 @@ async function boot() {
       scene,
       sky,
       ...lighting,
-      onChange: (hour) => updateLightingLabel(hour)
+      onChange: (hour, phase) => {
+      updateLightingLabel(hour);
+      buildingExplorer?.setInteriorLighting(hour, phase);
+    }
     });
     ui.setLoading(0.28, 'Mixing materials and light…');
     await nextFrame();
@@ -970,6 +973,7 @@ async function boot() {
       onStateChange: (state) => ui.setExplorerState(state),
       onToast: (message) => ui.showToast(message)
     });
+    buildingExplorer.setInteriorLighting(lightingController.getState().hour);
     bindEvents();
     setupPostProcessing();
     ui.setMode('orbit');
