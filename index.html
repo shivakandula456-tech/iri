@@ -67,6 +67,10 @@
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"></path><path d="m4.5 7.7 7.5 4.4 7.5-4.4M12 12.1V21"></path></svg>
           <span id="blueprintToggleLabel">Blueprint</span>
         </button>
+        <button id="exploreFloorsButton" type="button" class="top-button explore-floors-button" aria-pressed="false" title="Open interactive floor and interior exploration">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 19.5h16M6 19.5V7.2l6-3 6 3v12.3"></path><path d="M6 10.5h12M6 14.8h12M10 7.3v12.2M14 7.3v12.2"></path></svg>
+          <span id="exploreFloorsLabel">Explore floors</span>
+        </button>
         <button id="arPreviewButton" type="button" class="top-button ar-preview-button" title="Place a miniature exterior model in augmented reality" hidden>
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3Z"></path><path d="m4.5 7.8 7.5 4.3 7.5-4.3"></path><path d="M12 12.1V21"></path></svg>
           <span id="arPreviewLabel">AR preview</span>
@@ -290,6 +294,69 @@
           <span>Not an official Anandtara communication</span>
         </footer>
       </div>
+    </aside>
+
+    <aside id="buildingExplorerPanel" class="building-explorer-panel" aria-label="IRIS Inside interactive floor explorer" hidden>
+      <header class="explorer-header">
+        <div>
+          <span class="explorer-kicker">IRIS INSIDE · CONCEPT STUDY</span>
+          <h2>Explore the building</h2>
+        </div>
+        <button id="explorerCloseButton" type="button" class="facade-info-close" aria-label="Return to full exterior">×</button>
+      </header>
+      <p class="explorer-intro">Select a floor on the tower or use the floor stack below. Interior rooms are illustrative until approved drawings are supplied.</p>
+      <div class="explorer-floor-summary">
+        <div>
+          <strong id="explorerSelectedFloor">Floor 8</strong>
+          <span id="explorerModeLabel">Exterior view</span>
+        </div>
+        <span class="explorer-status-dot" aria-hidden="true"></span>
+      </div>
+      <div id="explorerFloorRail" class="explorer-floor-rail" role="group" aria-label="Select a building floor"></div>
+      <div class="explorer-mode-grid" role="group" aria-label="Building viewing mode">
+        <button id="explorerExteriorMode" type="button" data-explorer-mode="exterior" aria-pressed="true">Exterior highlight</button>
+        <button id="explorerCutawayMode" type="button" data-explorer-mode="cutaway" aria-pressed="false">Reveal cutaway</button>
+        <button id="explorerFloorMode" type="button" data-explorer-mode="floor" aria-pressed="false">Isolate floor</button>
+        <button id="explorerExplodedMode" type="button" data-explorer-mode="exploded" aria-pressed="false">Explode tower</button>
+      </div>
+      <div class="explorer-main-actions">
+        <button id="explorerEnterApartment" type="button" class="explorer-primary-button">Enter apartment</button>
+        <button id="explorerRotateFloor" type="button" aria-pressed="false">Rotate floor</button>
+      </div>
+      <div class="explorer-secondary-actions">
+        <button id="explorerReassemble" type="button" hidden>Reassemble tower</button>
+        <button id="explorerReturnToFloor" type="button" hidden>Return to floor</button>
+        <button id="explorerReturnExterior" type="button">Return to exterior</button>
+      </div>
+      <section id="explorerRoomSection" class="explorer-room-section" hidden>
+        <div class="explorer-section-heading">
+          <div>
+            <span class="explorer-kicker">SYNCHRONIZED ROOM EXPLORER</span>
+            <h3>Floor plan &amp; rooms</h3>
+          </div>
+          <span class="explorer-floor-chip" id="explorerPlanFloor">FLOOR 8</span>
+        </div>
+        <p class="explorer-plan-note">Conceptual layout only — not an approved apartment floor plan.</p>
+        <div id="explorerPlan" class="explorer-plan" role="group" aria-label="Select a room on the illustrative floor plan"></div>
+        <div id="explorerRoomList" class="explorer-room-list" role="group" aria-label="Room destinations"></div>
+        <div class="explorer-room-detail">
+          <span class="explorer-kicker">SELECTED SPACE</span>
+          <h4 id="explorerRoomTitle">Living room</h4>
+          <p id="explorerRoomDescription">Illustrative room information.</p>
+          <p id="explorerAccuracy" class="explorer-accuracy">Illustrative concept · not an approved plan</p>
+        </div>
+        <div id="explorerWalkControls" class="explorer-walk-controls" hidden>
+          <span class="explorer-kicker">WALK THROUGH</span>
+          <div class="explorer-walk-pad" role="group" aria-label="Apartment movement controls">
+            <button type="button" data-walk="forward" aria-label="Move forward">↑</button>
+            <button type="button" data-walk="left" aria-label="Move left">←</button>
+            <button type="button" data-walk="backward" aria-label="Move backward">↓</button>
+            <button type="button" data-walk="right" aria-label="Move right">→</button>
+          </div>
+          <p>Drag to look · WASD or arrow keys to walk · Select a room on the plan to move there.</p>
+        </div>
+      </section>
+      <p id="explorerModelNotice" class="explorer-model-notice">Floor heights and room layout are conceptual estimates. No architect-approved interior model is included.</p>
     </aside>
 
     <aside id="facadeInfo" class="facade-info" role="status" aria-live="polite" hidden>
