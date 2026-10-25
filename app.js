@@ -1,5 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from './assets/vendor/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import {
   CAMERA,
   CROWN_TOP,
@@ -30,6 +34,8 @@ const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => res
 const wait = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
 let renderer;
+let composer;
+let bloomPass;
 let scene;
 let camera;
 let controls;
@@ -106,6 +112,43 @@ function createRenderer() {
   instance.shadowMap.needsUpdate = true;
   instance.autoClear = true;
   return instance;
+}
+
+function setupPostProcessing() {
+  try {
+    composer = new EffectComposer(renderer);
+    composer.setPixelRatio(renderer.getPixelRatio());
+    composer.setSize(window.innerWidth, window.innerHeight);
+    composer.addPass(new RenderPass(scene, camera));
+
+    // Subtle architectural highlight bloom: kept below a restrained threshold
+    // so white frames retain detail and the building does not look overexposed.
+    bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(window.innerWidth, window.innerHeight),
+      0.18,
+      0.32,
+      0.88
+    );
+    composer.addPass(bloomPass);
+    composer.addPass(new OutputPass());
+    const toggle = document.getElementById('cinematicRenderToggle');
+    if (toggle) toggle.hidden = false;
+  } catch (error) {
+    console.warn('Cinematic post-processing unavailable; using the base renderer.', error);
+    composer?.dispose?.();
+    composer = null;
+    bloomPass = null;
+    const toggle = document.getElementById('cinematicRenderToggle');
+    if (toggle) {
+      toggle.hidden = true;
+      toggle.setAttribute('aria-pressed', 'false');
+    }
+  }
+}
+
+function renderFrame(deltaSeconds = 0) {
+  if (composer) composer.render(deltaSeconds);
+  else renderer.render(scene, camera);
 }
 
 function setupScene() {
@@ -361,9 +404,22 @@ function bindEvents() {
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
     quality?.resize();
+    composer?.setSize(width, height);
   });
 
   window.addEventListener('keydown', onKeyDown);
+
+  const cinematicToggle = document.getElementById('cinematicRenderToggle');
+  const cinematicLabel = document.getElementById('cinematicRenderLabel');
+  if (cinematicToggle) {
+    cinematicToggle.addEventListener('click', () => {
+      const enabled = cinematicToggle.getAttribute('aria-pressed') !== 'true';
+      if (bloomPass) bloomPass.enabled = enabled;
+      cinematicToggle.setAttribute('aria-pressed', String(enabled));
+      if (cinematicLabel) cinematicLabel.textContent = enabled ? 'On' : 'Off';
+      ui.showToast(enabled ? 'Cinematic highlights enabled.' : 'Cinematic highlights disabled.');
+    });
+  }
 
   const timeOfDay = document.getElementById('timeOfDay');
   if (timeOfDay && lightingController) {
@@ -409,7 +465,7 @@ function animate() {
   }
   guidedTour?.update(dt, Boolean(director?.isTransitioning));
   if (site) site.update(dt);
-  renderer.render(scene, camera);
+  renderFrame(dt);
 }
 
 async function boot() {
@@ -442,7 +498,13 @@ async function boot() {
     await nextFrame();
 
     setupScene();
-    quality = new QualityController(renderer);
+    quality = new QualityController(renderer, {
+      onChange: () => {
+        if (!composer) return;
+        composer.setPixelRatio(renderer.getPixelRatio());
+        composer.setSize(window.innerWidth, window.innerHeight);
+      }
+    });
     ui.setLoading(0.19, 'Weaving the sunset sky…');
     await nextFrame();
 
@@ -493,6 +555,7 @@ async function boot() {
 
     setupControllers();
     bindEvents();
+    setupPostProcessing();
     ui.setMode('orbit');
     ui.setPresetActive('home');
     ui.setLoading(0.86, 'Warming shaders…');
@@ -510,7 +573,7 @@ async function boot() {
     }
     ui.setLoading(0.96, 'Composing the first frame…');
     renderer.shadowMap.needsUpdate = true;
-    renderer.render(scene, camera);
+    renderFrame(0);
 
     ready = true;
     window.__IRIS_READY__ = true;
@@ -520,7 +583,7 @@ async function boot() {
 
     director.startIntro({ reducedMotion: motionPreference });
     director.update(0);
-    renderer.render(scene, camera);
+    renderFrame(0);
     renderer.setAnimationLoop(animate);
 
     // Expose a diagnostic surface for automated checks and curious visitors.
