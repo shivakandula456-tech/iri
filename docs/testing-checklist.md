@@ -15,7 +15,7 @@
 | Optional GLB loader path | glTF 2.0 can be loaded when configured, without affecting the default procedural mode | Lazy `GLTFLoader` module path added; no GLB supplied and loader network/runtime path not exercised | PARTIAL — runtime pending |
 | Interactive WebGL initialization | Scene appears and becomes ready | Browser navigation was blocked by the environment; not verified | PENDING |
 | IRIS Inside source syntax | Modified application, UI, tower geometry and floor explorer controllers parse | Static syntax parse passed for app, UI, building, geometry-kit, explorer, blueprint and facade-inspector modules | PASS — syntax only |
-| IRIS Inside DOM contract | Explorer interface has unique IDs and required UI references | 90 HTML IDs; no duplicates; 79 required UI element references resolved | PASS — static inspection |
+| IRIS Inside DOM contract | Explorer interface has unique IDs and required UI references | 94 HTML IDs; no duplicates; 83 required UI element references resolved | PASS — static inspection |
 
 ## Required browser acceptance tests
 
