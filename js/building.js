@@ -88,14 +88,23 @@ export function buildBuilding(materials) {
 function buildMassing(builder, mats) {
   const length = BUILDING.length - 2.6;
   const depth = BUILDING.depth - 3.4;
-  const bodyBottom = BUILDING.groundHeight;
-  const bodyHeight = ROOF_Y - bodyBottom - 0.35;
-
-  // A recessed inner body gives every window and loggia real depth.
-  builder.box(mats.ivory, 0, bodyBottom + bodyHeight / 2, 0, length, bodyHeight, depth, {
-    cast: true,
-    receive: true
-  });
+  // The opaque inner mass is split into floor-sized volumes. It retains the
+  // continuous exterior appearance, while a selected floor can now be clipped
+  // independently instead of cutting every level at once.
+  const bodyHeight = BUILDING.floorHeight - 0.5;
+  for (let level = 0; level < BUILDING.levels; level += 1) {
+    const floorBase = FLOOR_BASE(level);
+    builder.box(
+      mats.ivory,
+      0,
+      floorBase + 0.23 + bodyHeight / 2,
+      0,
+      length,
+      bodyHeight,
+      depth,
+      { cast: true, receive: true }
+    );
+  }
 
   // Roof slab and edge fascia close the mass from above.
   builder.box(mats.white, 0, ROOF_Y + 0.02, 0, BUILDING.length + 0.3, 0.46, BUILDING.depth + 0.3, {
