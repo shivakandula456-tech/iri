@@ -1,4 +1,4 @@
-import { BUILDING, INTRO_DURATION_MS } from './config.js';
+import { BUILDING, HALF_D, INTRO_DURATION_MS } from './config.js';
 
 const ORBIT_HINT_DESKTOP = 'Drag to orbit · Scroll to zoom · Right-drag to pan';
 const ORBIT_HINT_TOUCH = 'Drag to orbit · Pinch to zoom · Two fingers to pan';
@@ -28,6 +28,7 @@ export function createUI({
   onExplorerClose = () => {},
   onExplorerFloor = () => {},
   onExplorerMode = () => {},
+  onExplorerCutDepth = () => {},
   onExplorerEnter = () => {},
   onExplorerReturnFloor = () => {},
   onExplorerReassemble = () => {},
@@ -75,7 +76,11 @@ export function createUI({
     explorerFloorRail: byId('explorerFloorRail'),
     explorerExteriorMode: byId('explorerExteriorMode'),
     explorerCutawayMode: byId('explorerCutawayMode'),
+    explorerXrayMode: byId('explorerXrayMode'),
     explorerFloorMode: byId('explorerFloorMode'),
+    explorerCutControl: byId('explorerCutControl'),
+    explorerCutDepth: byId('explorerCutDepth'),
+    explorerCutDepthLabel: byId('explorerCutDepthLabel'),
     explorerExplodedMode: byId('explorerExplodedMode'),
     explorerEnterApartment: byId('explorerEnterApartment'),
     explorerRotateFloor: byId('explorerRotateFloor'),
@@ -379,6 +384,8 @@ export function createUI({
   elements.explorerReturnExterior.addEventListener('click', () => onExplorerClose());
   elements.explorerExteriorMode.addEventListener('click', () => onExplorerMode('exterior'));
   elements.explorerCutawayMode.addEventListener('click', () => onExplorerMode('cutaway'));
+  elements.explorerXrayMode.addEventListener('click', () => onExplorerMode('xray'));
+  elements.explorerCutDepth.addEventListener('input', () => onExplorerCutDepth(Number(elements.explorerCutDepth.value)));
   elements.explorerFloorMode.addEventListener('click', () => onExplorerMode('floor'));
   elements.explorerExplodedMode.addEventListener('click', () => onExplorerMode('exploded'));
   elements.explorerEnterApartment.addEventListener('click', () => onExplorerEnter());
@@ -458,7 +465,7 @@ export function createUI({
       const floor = Number(state.selectedFloor) || 1;
       const mode = state.mode || 'exterior';
       const modeLabels = {
-        exterior: 'Exterior highlight', cutaway: 'X-ray cutaway',
+        exterior: 'Exterior highlight', xray: 'X-ray facade', cutaway: 'Architectural cutaway',
         exploded: 'Exploded tower', floor: 'Isolated floor', interior: 'Inside apartment'
       };
       elements.buildingExplorerPanel.hidden = !active;
@@ -474,7 +481,7 @@ export function createUI({
         button.classList.toggle('is-active', selected);
         button.setAttribute('aria-pressed', String(selected));
       }
-      const modeButtons = [elements.explorerExteriorMode, elements.explorerCutawayMode, elements.explorerFloorMode, elements.explorerExplodedMode];
+      const modeButtons = [elements.explorerExteriorMode, elements.explorerCutawayMode, elements.explorerXrayMode, elements.explorerFloorMode, elements.explorerExplodedMode];
       for (const button of modeButtons) {
         const selected = button.dataset.explorerMode === mode;
         button.classList.toggle('is-active', selected);
@@ -485,10 +492,13 @@ export function createUI({
       elements.explorerRotateFloor.setAttribute('aria-pressed', String(Boolean(state.rotateEnabled)));
       elements.explorerRotateFloor.classList.toggle('is-active', Boolean(state.rotateEnabled));
       elements.explorerRotateFloor.textContent = state.rotateEnabled ? 'Drag to rotate · On' : 'Rotate floor';
-      elements.explorerRotateFloor.disabled = Boolean(state.walking) || !['floor', 'cutaway', 'exploded'].includes(mode);
+      elements.explorerRotateFloor.disabled = Boolean(state.walking) || !['floor', 'xray', 'cutaway', 'exploded'].includes(mode);
       elements.explorerReassemble.hidden = mode !== 'exploded';
       elements.explorerReturnToFloor.hidden = mode !== 'interior';
-      elements.explorerRoomSection.hidden = !['cutaway', 'floor', 'interior'].includes(mode);
+      elements.explorerCutControl.hidden = mode !== 'cutaway';
+      elements.explorerCutDepth.value = String(state.cutDepth ?? 6);
+      elements.explorerCutDepthLabel.textContent = `${Number(state.cutDistanceFromFront ?? (HALF_D - Number(state.cutDepth ?? 6))).toFixed(1)} m from front`;
+      elements.explorerRoomSection.hidden = !['xray', 'cutaway', 'floor', 'interior'].includes(mode);
       elements.explorerWalkControls.hidden = !Boolean(state.walking);
       elements.explorerModelNotice.textContent = state.proxyFloorsOnly
         ? 'This model has no floor-specific facade groups. Exploded view uses inferred floor datum proxies; the sample interior remains conceptual.'
