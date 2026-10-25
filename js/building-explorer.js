@@ -308,6 +308,7 @@ export class BuildingExplorer {
     this.mode = 'exterior';
     this.selectedFloor = clamp(this.selectedFloor, 1, BUILDING.levels);
     this.rotateEnabled = false;
+    if (this.interiorAssets[this.selectedFloor]) void this.loadInteriorAsset(this.selectedFloor);
     this.walking = false;
     this.heldKeys.clear();
     this._applyVisualMode();
@@ -514,6 +515,7 @@ export class BuildingExplorer {
     }
     if (this.site?.group) this.site.group.visible = this.siteInitialVisibility;
     this.interiorRoot.visible = false;
+    if (!this.rotateEnabled) this.interiorRoot.rotation.y = 0;
     this.conceptInterior.visible = !(this.loadedInterior && this.loadedInteriorFloor === this.selectedFloor);
     if (this.loadedInterior) this.loadedInterior.visible = this.loadedInteriorFloor === this.selectedFloor;
     this.floorHighlight.visible = this.mode !== 'exploded';
