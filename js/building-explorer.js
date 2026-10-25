@@ -280,6 +280,25 @@ export class BuildingExplorer {
     addBox(balcony, 'Balcony planter — illustrative', [1.5, 0.44, 0.48], [5.1, 0.34, 7.2], darkMaterial);
 
     this.roomObjects = roomMap;
+    // A lightweight X/Z collision map stops the walk-through from passing
+    // straight through conceptual partitions and furnishings. It is not a
+    // collision/egress model for a real apartment.
+    const walkObstacleNames = /partition wall|divider|counter — illustrative|worktop — illustrative|island — illustrative|sofa|coffee table|dining table|dining chair|bed base|mattress|wardrobe|vanity|shower tray|wc block|balcony bench|balcony planter/i;
+    this.walkObstacles = [];
+    root.updateMatrixWorld(true);
+    root.traverse((object) => {
+      if (!object.isMesh || !walkObstacleNames.test(object.name)) return;
+      const bounds = new THREE.Box3().setFromObject(object);
+      if (!bounds.isEmpty()) {
+        this.walkObstacles.push({
+          minX: bounds.min.x,
+          maxX: bounds.max.x,
+          minZ: bounds.min.z,
+          maxZ: bounds.max.z,
+          name: object.name
+        });
+      }
+    });
     this.interiorMaterials = [floorMaterial, wallMaterial, trimMaterial, darkMaterial, ...Array.from(roomMap.values(), (item) => item.zone.material)];
     root.visible = true;
     return root;
@@ -675,9 +694,24 @@ export class BuildingExplorer {
     if (this.heldKeys.has('a') || this.heldKeys.has('arrowleft') || this.heldKeys.has('left')) movement.sub(right);
     if (movement.lengthSq()) {
       movement.normalize().multiplyScalar(speed * dt);
-      this.camera.position.add(movement);
-      this.camera.position.x = clamp(this.camera.position.x, -12.6, 12.6);
-      this.camera.position.z = clamp(this.camera.position.z, -6.4, 7.75);
+      const currentX = this.camera.position.x;
+      const currentZ = this.camera.position.z;
+      const nextX = clamp(currentX + movement.x, -12.6, 12.6);
+      const nextZ = clamp(currentZ + movement.z, -6.4, 7.75);
+      const radius = 0.30;
+      const blocked = (x, z) => this.walkObstacles.some((box) =>
+        x > box.minX - radius && x < box.maxX + radius &&
+        z > box.minZ - radius && z < box.maxZ + radius
+      );
+      if (!blocked(nextX, nextZ)) {
+        this.camera.position.x = nextX;
+        this.camera.position.z = nextZ;
+      } else {
+        // Resolve X and Z independently so a visitor can slide along a wall
+        // instead of getting stuck on the first blocked diagonal step.
+        if (!blocked(nextX, currentZ)) this.camera.position.x = nextX;
+        if (!blocked(this.camera.position.x, nextZ)) this.camera.position.z = nextZ;
+      }
       this.camera.position.y = this._floorBottom() + 1.62;
     }
     const direction = new THREE.Vector3(
