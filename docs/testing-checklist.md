@@ -43,13 +43,15 @@ For all pending rows, record the browser/OS, actual outcome, notes and retest ou
 
 | R | Cinematic rendering | Local post-processing modules resolve; bloom can be toggled; scene remains visible if composer initialization fails; resizing and adaptive quality keep the composer buffers in sync | Pending — not run on this branch |
 
+| S | Optional WebXR AR | AR action appears only when secure-context capability check succeeds; miniature can be placed/repositioned on hit-tested surface; exit restores original viewer; unsupported/failed sessions leave normal viewer usable | Pending — requires compatible AR device and HTTPS |
+
 ## Testing environment limitation
 
 The test environment returned `ERR_BLOCKED_BY_ADMINISTRATOR` for navigation to both a local static HTTP URL and the local `file://` URL. A separate headless Chromium run also failed to initialize its software graphics context. Therefore, no interactive runtime test is claimed as passed here.
 
 ## Release gate
 
-Do not mark this concept acceptance-complete until tests A–R have been run in a normal browser, actual defects have been fixed, and the affected tests have been repeated. Save current screenshots and the final browser-console/network notes under `docs/evidence/` after that test pass.
+Do not mark this concept acceptance-complete until tests A–S have been run in a normal browser, actual defects have been fixed, and the affected tests have been repeated. Save current screenshots and the final browser-console/network notes under `docs/evidence/` after that test pass.
 
 
 ## Detailed feature tests for the immersive branch
@@ -76,3 +78,11 @@ Do not mark this concept acceptance-complete until tests A–R have been run in 
 - Toggle Cinematic finish off and on; compare highlights without loss of facade detail.
 - Resize the window and allow adaptive quality to change resolution; confirm composer output stays aligned to the canvas.
 - Simulate a post-processing initialization failure in a test copy and verify the base renderer remains usable.
+
+
+### Optional AR preview
+- Test over HTTPS on a device/browser reporting `immersive-ar` and `hit-test` support.
+- Start AR, confirm the background shows the camera passthrough and the placement ring follows a detected surface.
+- Tap to place the miniature, then tap another surface to reposition it.
+- End the session with the button or system control; confirm the full-size building, site, sky, lighting controls and camera work as before.
+- Test unsupported/non-secure context and a rejected AR session. The normal viewer must still initialize and remain usable.
