@@ -9,6 +9,8 @@ A static, browser-based, conceptual 3D exterior study of Iris Residences by Anan
 - Orbit mode, separate free-look mode, keyboard and touch movement.
 - Front, Rear, Left, Right, Isometric, Elevated, Roof, Entrance and Home camera presets.
 - Skip/replay intro, reduced-motion handling, loading/error states and adaptive render resolution.
+- Guided exterior tour with interruptible camera transitions across the main elevations, entrance, site and roof.
+- Live time-of-day control that updates the conceptual sky, direct sunlight, ambient fill, fog and exposure.
 - Locally bundled Three.js r164, OrbitControls, reference images and project documentation.
 - An optional GLB loading path. No `.glb` model is supplied in this delivery; the procedural reconstruction is used by default.
 
@@ -40,6 +42,8 @@ Place a licensed, approved `.glb` file in `assets/models/` and update `EXTERIOR_
 - Orbit mode: drag to rotate, scroll/pinch to zoom, right-drag or two-finger pan to pan.
 - Free-look: drag to look, W/A/S/D or arrow keys to move, Q/E to change height, Shift to move faster; use the on-screen joystick and height controls on touch devices.
 - Presets: buttons 1–9 map to Front, Rear, Left, Right, Isometric, Elevated, Roof, Entrance and Home.
+- Guided tour: select **Guided tour** to start the authored exterior route; select it again or manipulate the scene to stop and take control.
+- Atmosphere: open the **Atmosphere** control and move the time-of-day slider between 07:00 and 20:00. Sky and lights update while dragging; the reflection environment refreshes when the slider is released.
 - `O`: Orbit, `F`: Free-look, `I`: Replay intro, `Home`: reset camera, `Escape`: exit free-look or release pointer lock.
 - Intro can be skipped immediately; interaction stops the cinematic camera movement.
 
@@ -49,6 +53,10 @@ The approximate dimensions and unknown rear/side/roof details are documented in 
 
 The official project page and image references are listed in `docs/source-manifest.md`. Image rights remain with their respective owners; verify permission before public or commercial redistribution. Published project details must be reconfirmed with Anandtara before client-approved release. The current public page contains conflicting Phase I/Phase II RERA ID pairings in different sections; these are intentionally not repeated in the viewer.
 
+## Immersive experience work
+
+The `feature/immersive-architectural-experience` branch adds the guided tour and live time-of-day lighting controller. The tour uses existing camera presets and should stop immediately when the visitor interacts manually. Time-of-day is a visual presentation control, not an accurate solar-position simulation. Facade annotations, AR and a renderer comparison remain future work; they are not presented as implemented features.
+
 ## Current verification status
 
-Static checks were performed for JavaScript syntax, local module paths and duplicate HTML IDs. Full interactive browser tests could not be completed in the working environment because browser navigation to the local test page was blocked. See `docs/testing-checklist.md`; do not treat this delivery as fully acceptance-tested until the pending browser tests pass.
+The original baseline had static source checks and visual evidence, but the new feature branch has not yet been run through the full browser acceptance suite. Local browser navigation was blocked in the working environment. Follow `docs/testing-checklist.md`, including the guided-tour and lighting tests, before merging or declaring the feature branch release-ready.
