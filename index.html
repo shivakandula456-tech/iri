@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101a20">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="A conceptual, interactive 3D exterior study of Iris Residences at Anandtara, Mundhwa, Pune. Independently reconstructed from published imagery in Three.js.">
+  <title>Iris Residences · Exterior Digital Twin</title>
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="preload" href="./assets/vendor/three.module.js" as="script" crossorigin>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./assets/vendor/three.module.js",
+      "three/addons/": "./assets/vendor/"
+    }
+  }
+  </script>
+</head>
+<body class="is-loading" data-mode="orbit">
+  <main id="app" class="app-shell">
+    <canvas id="scene" class="scene-canvas" tabindex="0" aria-label="Interactive three-dimensional exterior model of Iris Residences. Use the camera controls or keyboard shortcuts to explore the building."></canvas>
+    <div class="scene-vignette" aria-hidden="true"></div>
+    <div class="scene-grain" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <div class="brand" aria-label="Iris Residences, conceptual exterior study">
+        <svg class="brand-mark" viewBox="0 0 44 44" aria-hidden="true" focusable="false">
+          <ellipse cx="22" cy="22" rx="16.5" ry="7.2" transform="rotate(0 22 22)"></ellipse>
+          <ellipse cx="22" cy="22" rx="16.5" ry="7.2" transform="rotate(60 22 22)"></ellipse>
+          <ellipse cx="22" cy="22" rx="16.5" ry="7.2" transform="rotate(120 22 22)"></ellipse>
+          <circle cx="22" cy="22" r="2.1" class="brand-mark-core"></circle>
+        </svg>
+        <div class="brand-lockup">
+          <span class="brand-name">IRIS</span>
+          <span class="brand-sub">RESIDENCES</span>
+        </div>
+        <div class="brand-meta">
+          <span>Anandtara · Mundhwa, Pune</span>
+          <span class="brand-chip">Conceptual exterior study</span>
+        </div>
+      </div>
+      <div class="top-actions" role="group" aria-label="Page controls">
+        <button id="replayIntro" type="button" class="top-button" title="Replay the sunset introduction">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6.5h2.2v3.2A8 8 0 1 1 4.6 14"></path><path d="M4 4v5.7h5.7"></path></svg>
+          <span>Intro</span>
+        </button>
+        <button id="aboutButton" type="button" class="top-button" aria-haspopup="dialog" aria-expanded="false" title="About this model, accuracy and credits">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 10.4v6"></path><circle cx="12" cy="7.3" r="0.9" class="button-fill"></circle></svg>
+          <span>About</span>
+        </button>
+        <a id="projectSiteLink" class="top-button project-site-button" href="https://anandtara.com/iris-residences/" target="_blank" rel="noopener noreferrer" aria-label="Open the official Iris Residences website" title="Official project website">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 4h6v6"></path><path d="M20 4 11 13"></path><path d="M18 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5"></path></svg>
+          <span>Project site</span>
+        </a>
+        <button id="fullscreenButton" type="button" class="top-button top-button-icon" aria-pressed="false" title="Toggle fullscreen">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 4H4v5"></path><path d="M15 4h5v5"></path><path d="M20 15v5h-5"></path><path d="M4 15v5h5"></path></svg>
+          <span id="fullscreenLabel">Fullscreen</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="concept-note" aria-hidden="true">
+      <span class="concept-line"></span>
+      <span>EXTERIOR STUDY / 2026</span>
+    </div>
+
+    <div class="hud">
+      <div class="hud-hint">
+        <span class="hint-dot" aria-hidden="true"></span>
+        <span id="hintText">Drag to orbit · Scroll to zoom · Right-drag to pan</span>
+      </div>
+      <div class="dock">
+        <div class="mode-switch" role="group" aria-label="Navigation mode">
+          <button id="modeOrbit" type="button" class="mode-button is-active" aria-pressed="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="2.2"></circle><ellipse cx="12" cy="12" rx="8.6" ry="4.2" transform="rotate(-28 12 12)"></ellipse></svg>
+            <span>Orbit</span>
+          </button>
+          <button id="modeFree" type="button" class="mode-button" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 15.5c3.2-1.4 5.1-4.1 6.8-8.2 1.8 4.1 3.9 6.8 7.2 8.2"></path><path d="M12 15.7v4.8"></path><path d="M9.7 18.4 12 20.7l2.3-2.3"></path></svg>
+            <span>Free-look</span>
+          </button>
+        </div>
+        <div id="presetRail" class="preset-rail" role="group" aria-label="Camera views"></div>
+      </div>
+    </div>
+
+    <div id="freeHud" class="free-hud" hidden>
+      <div class="look-hint">
+        <span class="hint-dot" aria-hidden="true"></span>
+        <span id="lookHintText">Drag to look · WASD move · Q / E rise &amp; fall</span>
+      </div>
+      <div id="joystick" class="joystick" aria-label="Movement joystick">
+        <span class="joystick-ring" aria-hidden="true"></span>
+        <span id="joystickKnob" class="joystick-knob" aria-hidden="true"></span>
+      </div>
+      <div class="free-actions">
+        <div class="vertical-pad" role="group" aria-label="Change eye height">
+          <button id="freeUp" type="button" class="round-button" aria-label="Rise">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 19V5"></path><path d="m6.5 10.5 5.5-5.5 5.5 5.5"></path></svg>
+          </button>
+          <button id="freeDown" type="button" class="round-button" aria-label="Descend">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14"></path><path d="m6.5 13.5 5.5 5.5 5.5-5.5"></path></svg>
+          </button>
+        </div>
+        <button id="lockCursor" type="button" class="pill-button" aria-pressed="false" title="Optional pointer lock for mouse-look">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="6.5" y="10" width="11" height="8.5" rx="1.2"></rect><path d="M9 10V7.5a3 3 0 0 1 6 0V10"></path></svg>
+          <span id="lockCursorLabel">Lock cursor</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="intro" class="intro" aria-hidden="true" hidden>
+      <div class="intro-wash" aria-hidden="true"></div>
+      <div class="intro-content">
+        <p class="intro-eyebrow">Exterior digital twin · Concept study</p>
+        <h1 class="intro-title"><span>IRIS</span> <em>RESIDENCES</em></h1>
+        <p class="intro-place">Anandtara · Mundhwa, Pune</p>
+        <span class="intro-rule" aria-hidden="true"></span>
+        <p class="intro-note">Independently reconstructed from published imagery.<br>Dimensions, landscape and rooftop detail are approximate.</p>
+      </div>
+      <button id="skipIntro" type="button" class="skip-button">
+        <span>Skip intro</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h13"></path><path d="m13 7 5 5-5 5"></path></svg>
+      </button>
+      <div class="intro-foot">
+        <span>Sunset study · 14 levels + open crown</span>
+        <div class="intro-progress" aria-hidden="true"><span id="introProgress"></span></div>
+        <span>Est. 46.8 m to terrace · visual estimate</span>
+      </div>
+    </div>
+
+    <div id="loading" class="loading" aria-busy="true">
+      <div class="loading-card">
+        <svg class="loading-mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+          <ellipse cx="32" cy="32" rx="24" ry="10.5"></ellipse>
+          <ellipse cx="32" cy="32" rx="24" ry="10.5" transform="rotate(60 32 32)"></ellipse>
+          <ellipse cx="32" cy="32" rx="24" ry="10.5" transform="rotate(120 32 32)"></ellipse>
+          <circle cx="32" cy="32" r="3"></circle>
+        </svg>
+        <p class="eyebrow">Preparing the exterior study</p>
+        <h2>Iris Residences</h2>
+        <p class="loading-stage" id="loadingStage">Starting the renderer…</p>
+        <div class="loading-progress"><span id="loadingBar"></span></div>
+        <div class="loading-meta">
+          <span id="loadingPercent">0%</span>
+          <span>Procedural · local files</span>
+        </div>
+        <p class="loading-note">No external requests are made after load.</p>
+      </div>
+    </div>
+
+    <section id="fatal" class="fatal" role="alert" aria-live="assertive" hidden>
+      <div class="fatal-card">
+        <p class="eyebrow">Viewer unavailable</p>
+        <h2>This study could not start</h2>
+        <p id="fatalMessage">The browser could not initialise the 3D scene.</p>
+        <pre id="fatalDetail" class="fatal-detail"></pre>
+        <div class="fatal-actions">
+          <button id="fatalReload" type="button" class="solid-button">Reload page</button>
+          <a href="./README.md" class="text-link">Read setup notes</a>
+        </div>
+        <p class="fatal-note">This is a static site. If you opened <code>index.html</code> directly from disk, serve the folder with any static web server and open the local URL instead.</p>
+      </div>
+    </section>
+
+    <aside id="aboutPanel" class="sheet" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="aboutTitle" hidden>
+      <div class="sheet-scrim" data-close-sheet></div>
+      <div class="sheet-card">
+        <header class="sheet-header">
+          <div>
+            <p class="eyebrow">Project note / 01</p>
+            <h2 id="aboutTitle">About this study</h2>
+          </div>
+          <button id="aboutClose" type="button" class="close-button" aria-label="Close project note">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 6 12 12"></path><path d="m18 6-12 12"></path></svg>
+          </button>
+        </header>
+        <div class="sheet-body">
+          <section class="snapshot-section">
+            <h3>Published project snapshot</h3>
+            <p class="muted">Transcribed from the current public Anandtara page. These details are not independently verified and must be reconfirmed before client-approved release.</p>
+            <dl class="snapshot-facts">
+              <div><dt>Location</dt><dd>Mundhwa, Pune</dd></div>
+              <div><dt>Configurations</dt><dd>2 BHK and 3 BHK</dd></div>
+              <div><dt>Published site area</dt><dd>1.2 acres</dd></div>
+              <div><dt>Amenities listed</dt><dd>Open gardens, children’s play area, gym, yoga room and banquet hall</dd></div>
+            </dl>
+            <h4>Published connectivity figures</h4>
+            <ul class="connectivity-list">
+              <li><span>School</span><strong>3.6 km</strong></li>
+              <li><span>Kharadi IT Hub</span><strong>3.4 km</strong></li>
+              <li><span>Bus stand</span><strong>1.7 km</strong></li>
+              <li><span>Manipal iHospital</span><strong>1.9 km</strong></li>
+              <li><span>Magarpatta IT Hub</span><strong>2.8 km</strong></li>
+              <li><span>Local market</span><strong>2.7 km</strong></li>
+              <li><span>Petrol pump</span><strong>2.7 km</strong></li>
+              <li><span>Airport</span><strong>6.7 km</strong></li>
+              <li><span>Pune Junction</span><strong>7.5 km</strong></li>
+            </ul>
+            <p class="accent-note">The public page currently lists June 2026 as the possession date, which has passed. Its Phase I/Phase II RERA IDs also appear inconsistently paired. This viewer does not assert a current possession status or repeat those IDs pending developer confirmation.</p>
+            <p><a href="https://anandtara.com/iris-residences/" target="_blank" rel="noopener noreferrer">Visit the official Iris Residences website</a></p>
+          </section>
+          <section>
+            <h3>A conceptual exterior twin</h3>
+            <p>This is an independent, real-time 3D study of the exterior of Iris Residences at Anandtara, Mundhwa, Pune. Every visible element — massing, facade rhythm, open crown, landscape, gate — is geometry generated in the browser from a visual reading of published project imagery. It is not a photograph panorama, a video, or an official developer model.</p>
+            <p class="accent-note">No architect-issued model, drawing set or survey was available for this exercise.</p>
+          </section>
+          <section>
+            <h3>What is verified, and what is inferred</h3>
+            <p>The elongated three-wing white slab, deep facade channels, horizontal slab bands, glazed balconies, bronze screens, broad end blades, sculptural end visors, podium and open rooftop crown are all visible in the supplied references. Their approximate dimensions and internal rhythm are inferred visually.</p>
+            <p>Sizes are estimates: approximately 64 m long, 20 m deep, 14 residential levels, with the terrace at about 46.8 m and the open crown top near 54.7 m. The parapet, crown and restrained roof forms follow what is visible in the published aerial views; no rooftop amenity is claimed. The driveway, drop-off loop, play garden, court and planting are a conceptual landscape study, not a surveyed site plan.</p>
+            <p>Do not use this model for construction, approvals, sales, wayfinding, RERA disclosures or any representation of the real property. It deliberately does not model interiors.</p>
+          </section>
+          <section>
+            <h3>Controls</h3>
+            <dl class="control-list">
+              <div><dt>Orbit</dt><dd>Drag to rotate through a full 360°, scroll or pinch to zoom, right-drag or two fingers to pan.</dd></div>
+              <div><dt>Free-look</dt><dd>Drag to look. W A S D or arrow keys move; Q / E (or ▲ / ▼) change height; Shift accelerates. A mobile joystick is provided.</dd></div>
+              <div><dt>Pointer lock</dt><dd>Optional in free-look. Click “Lock cursor” for continuous mouse-look; Escape releases it.</dd></div>
+              <div><dt>Views</dt><dd>Use the numbered camera views, or press 1–8 for presets and 9 for Home. O returns to orbit, F enters free-look, I replays the intro.</dd></div>
+            </dl>
+          </section>
+          <section>
+            <h3>Lighting &amp; motion</h3>
+            <p>The sunset is a procedural sky with a matching image-based lighting capture. The intro can be skipped instantly; any canvas interaction also takes control. If your system requests reduced motion, the opening becomes a still title card and the camera does not move automatically.</p>
+          </section>
+          <section>
+            <h3>Sources, credits &amp; rights</h3>
+            <p>Reference imagery and project information were consulted from the official Anandtara / Iris Residences website and public project galleries. Reference images remain © Anandtara and their respective rights holders; they are included in this delivery only as visual research material, not for redistribution or commercial use. Confirm rights before publishing this repository or its reference folder.</p>
+            <p>The “Iris Residences” name is used to identify the subject of the study. The typographic wordmark in the scene is a simple, unofficial reinterpretation, not the project’s official logo or marketing artwork.</p>
+            <p>Runtime built with <a href="https://threejs.org/" target="_blank" rel="noopener noreferrer">Three.js</a> r164 (MIT licence, vendored locally). The default procedural viewer uses local runtime assets. Optional architect-supplied GLB mode lazily fetches the pinned r164 GLTFLoader module from jsDelivr.</p>
+            <p class="muted">Detailed source notes, inferred geometry and the test log live in the delivery folder under <code>docs/</code>.</p>
+          </section>
+        </div>
+        <footer class="sheet-footer">
+          <span>Concept study · 2026</span>
+          <span>Not an official Anandtara communication</span>
+        </footer>
+      </div>
+    </aside>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <div id="sceneStatus" class="visually-hidden" role="status" aria-live="polite"></div>
+
+    <noscript>
+      <div class="noscript">This exterior study needs JavaScript and WebGL. Please enable JavaScript and reload the page.</div>
+    </noscript>
+  </main>
+
+  <script>
+    (function () {
+      const emergency = (message, detail) => {
+        if (window.__IRIS_READY__) return;
+        const loading = document.getElementById('loading');
+        const fatal = document.getElementById('fatal');
+        // A specific startup failure gets reported first. Never let the later
+        // watchdog replace that diagnostic with its generic file:// message.
+        if (fatal && !fatal.hidden) return;
+        const msg = document.getElementById('fatalMessage');
+        const det = document.getElementById('fatalDetail');
+        const reload = document.getElementById('fatalReload');
+        document.body.classList.remove('is-loading');
+        if (loading) {
+          loading.hidden = true;
+          loading.setAttribute('aria-busy', 'false');
+        }
+        if (fatal) fatal.hidden = false;
+        if (msg) msg.textContent = message;
+        if (det) {
+          det.textContent = detail || '';
+          det.hidden = !detail;
+        }
+        reload?.focus?.();
+      };
+      window.__IRIS_EMERGENCY__ = emergency;
+      window.addEventListener('error', (event) => {
+        const detail = event && event.message ? event.message : 'Unknown script error.';
+        emergency('The 3D viewer stopped while loading.', detail);
+      });
+      window.addEventListener('unhandledrejection', (event) => {
+        const reason = event && event.reason ? String(event.reason.stack || event.reason) : 'Unknown promise rejection.';
+        emergency('The 3D viewer stopped while loading.', reason);
+      });
+      window.setTimeout(() => {
+        if (!window.__IRIS_READY__) {
+          emergency(
+            'Loading took longer than expected.',
+            'Check that the whole folder (including assets/vendor) was uploaded, then serve it through a static web server. Browsers block ES modules on file:// URLs.'
+          );
+        }
+      }, 14000);
+    })();
+  </script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
