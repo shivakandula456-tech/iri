@@ -72,6 +72,45 @@ export class ModelBuilder {
     // but must never be mistaken for residential levels.
     let layer = options.layer || null;
     const objectHeight = Math.abs(scale[1]);
+
+    // Tall, upright facade boxes (vertical fins/piers) are split at estimated
+    // storey boundaries so a selected-floor cutaway can clip the matching
+    // segment without cutting the entire multi-storey element. The same
+    // material/shape is used, and the split boxes share the same outer bounds.
+    if (
+      !layer &&
+      this.isTowerBuilder &&
+      geometry === this.geometries.box &&
+      objectHeight > BUILDING.floorHeight * 1.12 &&
+      Math.abs(rotation[0] || 0) < 1e-5 &&
+      Math.abs(rotation[2] || 0) < 1e-5
+    ) {
+      const bottom = position[1] - objectHeight / 2;
+      const top = position[1] + objectHeight / 2;
+      const insideTower = bottom >= BUILDING.groundHeight - 0.3 &&
+        top <= ROOF_Y + 0.35 &&
+        top > BUILDING.groundHeight + BUILDING.floorHeight * 1.5;
+      if (insideTower) {
+        for (let floorNumber = 1; floorNumber <= BUILDING.levels; floorNumber += 1) {
+          const floorBottom = BUILDING.groundHeight + (floorNumber - 1) * BUILDING.floorHeight;
+          const floorTop = floorBottom + BUILDING.floorHeight;
+          const segmentBottom = Math.max(bottom, floorBottom);
+          const segmentTop = Math.min(top, floorTop);
+          const segmentHeight = segmentTop - segmentBottom;
+          if (segmentHeight <= 0.01) continue;
+          this._add(
+            material,
+            geometry,
+            [position[0], (segmentBottom + segmentTop) / 2, position[2]],
+            [scale[0], segmentHeight, scale[2]],
+            rotation,
+            { ...options, layer: `floor-${floorNumber}` }
+          );
+        }
+        return this;
+      }
+    }
+
     if (!layer && this.isTowerBuilder && objectHeight <= BUILDING.floorHeight * 1.12 &&
         position[1] >= BUILDING.groundHeight - 0.3 && position[1] < ROOF_Y - 0.35) {
       const floorNumber = Math.floor((position[1] - BUILDING.groundHeight) / BUILDING.floorHeight) + 1;
