@@ -23,6 +23,7 @@ export class LightingController {
     this.hemisphere = hemisphere;
     this.fill = fill;
     this.onChange = onChange;
+    this.windowMaterials = null;
     this.hour = 18;
     this.setTimeOfDay(this.hour, { refreshEnvironment: false });
   }
@@ -43,6 +44,14 @@ export class LightingController {
     const warmWindow = 1 - clamp(Math.abs(nextHour - 18) / 3.7, 0, 1);
     const lateTwilight = smoothstep(18.4, 20, nextHour);
     const night = smoothstep(19.2, 20, nextHour);
+    const eveningGlow = smoothstep(16.2, 19.6, nextHour);
+
+    if (this.windowMaterials?.glassWarm) {
+      this.windowMaterials.glassWarm.emissiveIntensity = 0.08 + eveningGlow * 1.12 + warmWindow * 0.12;
+    }
+    if (this.windowMaterials?.glassLobby) {
+      this.windowMaterials.glassLobby.emissiveIntensity = 0.08 + eveningGlow * 1.0 + night * 0.22;
+    }
 
     this.sun.position.copy(sunDirection).multiplyScalar(210);
     this.sun.intensity = 0.75 + daylight * 2.05 + warmWindow * 0.35;
@@ -81,6 +90,14 @@ export class LightingController {
     this.sky?.setTimeOfDay?.(nextHour, { refreshEnvironment });
     this.onChange(nextHour, { daylight, warmWindow, lateTwilight });
     return this.hour;
+  }
+
+  setWindowMaterials(materials = {}) {
+    this.windowMaterials = {
+      glassWarm: materials.glassWarm || null,
+      glassLobby: materials.glassLobby || null
+    };
+    this.setTimeOfDay(this.hour, { refreshEnvironment: false });
   }
 
   getState() {
