@@ -91,7 +91,9 @@ function buildMassing(builder, mats) {
   // The opaque inner mass is split into floor-sized volumes. It retains the
   // continuous exterior appearance, while a selected floor can now be clipped
   // independently instead of cutting every level at once.
-  const bodyHeight = BUILDING.floorHeight - 0.5;
+  // Extend each core section almost to the next fascia so splitting the
+  // original continuous mass does not introduce visible gaps between floors.
+  const bodyHeight = BUILDING.floorHeight - 0.25;
   for (let level = 0; level < BUILDING.levels; level += 1) {
     const floorBase = FLOOR_BASE(level);
     builder.box(
