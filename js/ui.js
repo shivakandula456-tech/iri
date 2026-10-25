@@ -19,7 +19,11 @@ export function createUI({
   onMode = () => {},
   onReplayIntro = () => {},
   onGuidedTourToggle = () => {},
+  onGuidedPauseToggle = () => {},
+  onGuidedNext = () => {},
+  onGuidedSkip = () => {},
   onInspectToggle = () => {},
+  onBlueprintToggle = () => {},
   onClearInspection = () => {},
   onSkipIntro = () => {},
   onSheetOpen = () => {},
@@ -42,6 +46,16 @@ export function createUI({
     replayIntro: byId('replayIntro'),
     guidedTourButton: byId('guidedTourButton'),
     guidedTourLabel: byId('guidedTourLabel'),
+    directorPanel: byId('directorPanel'),
+    tourStepTitle: byId('tourStepTitle'),
+    tourStepCount: byId('tourStepCount'),
+    tourProgress: byId('tourProgress'),
+    tourPauseButton: byId('tourPauseButton'),
+    tourPauseLabel: byId('tourPauseLabel'),
+    tourNextButton: byId('tourNextButton'),
+    tourSkipButton: byId('tourSkipButton'),
+    blueprintToggle: byId('blueprintToggle'),
+    blueprintToggleLabel: byId('blueprintToggleLabel'),
     facadeInspectButton: byId('facadeInspectButton'),
     facadeInspectLabel: byId('facadeInspectLabel'),
     facadeInfo: byId('facadeInfo'),
@@ -276,6 +290,10 @@ export function createUI({
   elements.modeFree.addEventListener('click', () => onMode('free'));
   elements.replayIntro.addEventListener('click', () => onReplayIntro());
   elements.guidedTourButton.addEventListener('click', () => onGuidedTourToggle());
+  elements.tourPauseButton.addEventListener('click', () => onGuidedPauseToggle());
+  elements.tourNextButton.addEventListener('click', () => onGuidedNext());
+  elements.tourSkipButton.addEventListener('click', () => onGuidedSkip());
+  elements.blueprintToggle.addEventListener('click', () => onBlueprintToggle());
   elements.facadeInspectButton.addEventListener('click', () => onInspectToggle());
   elements.facadeInfoClose.addEventListener('click', () => onClearInspection());
   elements.aboutButton.addEventListener('click', () => openSheet());
@@ -312,6 +330,7 @@ export function createUI({
     setPresetActive,
     setGuidedTourState(state = {}) {
       const active = Boolean(state.active);
+      const paused = Boolean(state.paused);
       elements.guidedTourButton.setAttribute('aria-pressed', String(active));
       elements.guidedTourButton.classList.toggle('is-tour-active', active);
       elements.guidedTourLabel.textContent = active
@@ -320,6 +339,24 @@ export function createUI({
       elements.guidedTourButton.title = active
         ? `${state.label || 'Guided tour'} — click to stop`
         : 'Play the guided exterior tour';
+      elements.directorPanel.hidden = !active;
+      if (active) {
+        elements.tourStepTitle.textContent = state.label || 'Guided exterior tour';
+        elements.tourStepCount.textContent = `${String(state.step || 1).padStart(2, '0')} / ${String(state.total || 9).padStart(2, '0')}`;
+        elements.tourProgress.style.width = `${Math.max(0, Math.min(1, (state.step || 1) / (state.total || 9))) * 100}%`;
+      }
+      elements.tourPauseButton.setAttribute('aria-pressed', String(paused));
+      elements.tourPauseLabel.textContent = paused ? 'Resume' : 'Pause';
+      elements.tourPauseButton.title = paused ? 'Resume the guided tour' : 'Pause tour progression';
+    },
+    setBlueprintState(active) {
+      const enabled = Boolean(active);
+      elements.blueprintToggle.setAttribute('aria-pressed', String(enabled));
+      elements.blueprintToggle.classList.toggle('is-blueprint-active', enabled);
+      elements.blueprintToggleLabel.textContent = enabled ? 'Reality' : 'Blueprint';
+      elements.blueprintToggle.title = enabled
+        ? 'Return to the fully shaded 3D exterior'
+        : 'Reveal the building\'s architectural edge geometry';
     },
     setInspectionState(active) {
       const enabled = Boolean(active);
