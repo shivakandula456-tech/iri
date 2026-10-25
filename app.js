@@ -45,6 +45,13 @@ let guidedTour;
 let lightingController;
 let facadeInspector;
 let site;
+let arSession = null;
+let arHitTestSource = null;
+let arViewerSpace = null;
+let arRoot = null;
+let arReticle = null;
+let arPlaced = false;
+let arPreviousState = null;
 let building;
 let sky;
 let horizon;
@@ -147,6 +154,12 @@ function setupPostProcessing() {
 }
 
 function renderFrame(deltaSeconds = 0) {
+  // EffectComposer's traditional post-processing passes do not render the XR
+  // headset's per-eye camera correctly. Keep optional AR on the safe base path.
+  if (renderer?.xr?.isPresenting) {
+    renderer.render(scene, camera);
+    return;
+  }
   if (composer) {
     try {
       composer.render(deltaSeconds);
@@ -171,6 +184,209 @@ function renderFrame(deltaSeconds = 0) {
     }
   }
   renderer.render(scene, camera);
+}
+
+function configureARButton() {
+  const button = document.getElementById('arPreviewButton');
+  const label = document.getElementById('arPreviewLabel');
+  if (!button) return;
+
+  button.hidden = true;
+  if (!window.isSecureContext || !navigator.xr?.isSessionSupported) return;
+
+  navigator.xr.isSessionSupported('immersive-ar')
+    .then((supported) => {
+      button.hidden = !supported;
+      button.title = supported
+        ? 'Place a miniature exterior model in augmented reality'
+        : 'AR is not supported by this browser or device';
+    })
+    .catch((error) => {
+      button.hidden = true;
+      console.info('Immersive AR capability check did not complete.', error);
+    });
+
+  button.addEventListener('click', async () => {
+    if (arSession) {
+      try {
+        await arSession.end();
+      } catch (error) {
+        console.warn('Could not end the AR session cleanly.', error);
+        restoreARScene();
+      }
+      return;
+    }
+    await enterARPreview();
+  });
+
+  function setLabel(text, active) {
+    if (label) label.textContent = text;
+    button.setAttribute('aria-pressed', String(Boolean(active)));
+    button.title = active
+      ? 'Exit augmented reality preview'
+      : 'Place a miniature exterior model in augmented reality';
+  }
+
+  async function enterARPreview() {
+    if (!ready || !renderer || !building?.group) return;
+    if (mode === 'free') setMode('orbit');
+    if (guidedTour?.active) guidedTour.stop({ reason: 'ar' });
+    if (facadeInspector?.enabled) {
+      facadeInspector.setEnabled(false);
+      ui.setInspectionState(false);
+    }
+    if (director?.isIntroPlaying) director.stopIntro({ takeControl: true });
+    if (director?.isTransitioning) director.interrupt();
+
+    let session = null;
+    try {
+      button.disabled = true;
+      if (label) label.textContent = 'Opening AR…';
+
+      renderer.xr.enabled = true;
+      session = await navigator.xr.requestSession('immersive-ar', {
+        requiredFeatures: ['hit-test'],
+        optionalFeatures: ['local-floor', 'dom-overlay'],
+        domOverlay: { root: document.body }
+      });
+
+      const isFloorSpaceEnabled = Boolean(session.enabledFeatures?.has?.('local-floor'));
+      renderer.xr.setReferenceSpaceType(isFloorSpaceEnabled ? 'local-floor' : 'local');
+
+      arPreviousState = {
+        background: scene.background,
+        siteVisible: site?.group.visible ?? true,
+        horizonVisible: horizon?.group.visible ?? true
+      };
+      scene.background = null;
+      if (site) site.group.visible = false;
+      if (horizon) horizon.group.visible = false;
+
+      arRoot = new THREE.Group();
+      arRoot.name = 'Iris Residences — miniature AR model';
+      arRoot.scale.setScalar(0.015);
+      arRoot.visible = false;
+      arRoot.add(building.group);
+      scene.add(arRoot);
+      arPlaced = false;
+
+      const reticleGeometry = new THREE.RingGeometry(0.105, 0.15, 36);
+      const reticleMaterial = new THREE.MeshBasicMaterial({
+        color: 0xe4c18c,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.9,
+        depthWrite: false
+      });
+      arReticle = new THREE.Mesh(reticleGeometry, reticleMaterial);
+      arReticle.name = 'AR placement reticle';
+      arReticle.rotation.x = -Math.PI / 2;
+      arReticle.matrixAutoUpdate = false;
+      arReticle.visible = false;
+      scene.add(arReticle);
+
+      arViewerSpace = await session.requestReferenceSpace('viewer');
+      arHitTestSource = await session.requestHitTestSource({ space: arViewerSpace });
+      session.addEventListener('select', placeARModel);
+      session.addEventListener('end', restoreARScene, { once: true });
+      arSession = session;
+
+      await renderer.xr.setSession(session);
+      renderer.setAnimationLoop(animate);
+      setLabel('AR active', true);
+      ui.showToast('Move your phone to find a surface, then tap to place the miniature.');
+    } catch (error) {
+      console.warn('AR preview could not start.', error);
+      if (session && session !== arSession) {
+        try { await session.end(); } catch { /* no further recovery is needed */ }
+      }
+      restoreARScene();
+      setLabel('AR preview', false);
+      ui.showToast('AR is unavailable here. The normal 3D viewer is unchanged.');
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  function placeARModel() {
+    if (!arReticle?.visible || !arRoot) {
+      ui.showToast('Point at a flat surface until the placement ring appears.');
+      return;
+    }
+    // Each tap can reposition the miniature, which is useful on small surfaces.
+    arRoot.position.copy(arReticle.position);
+    arRoot.rotation.set(0, 0, 0);
+    arRoot.visible = true;
+    arPlaced = true;
+    ui.showToast('Miniature placed. Tap another surface to reposition it.');
+  }
+
+  function restoreARScene() {
+    if (arHitTestSource) {
+      try { arHitTestSource.cancel(); } catch { /* session may already be closed */ }
+    }
+    arHitTestSource = null;
+    arViewerSpace = null;
+
+    if (arSession) {
+      arSession.removeEventListener('select', placeARModel);
+      arSession.removeEventListener('end', restoreARScene);
+    }
+    arSession = null;
+
+    if (arReticle) {
+      scene.remove(arReticle);
+      arReticle.geometry?.dispose();
+      if (Array.isArray(arReticle.material)) arReticle.material.forEach((m) => m.dispose());
+      else arReticle.material?.dispose();
+      arReticle = null;
+    }
+
+    if (arRoot) {
+      arRoot.remove(building.group);
+      scene.remove(arRoot);
+      arRoot.position.set(0, 0, 0);
+      arRoot.rotation.set(0, 0, 0);
+      arRoot.scale.set(1, 1, 1);
+      scene.add(building.group);
+      arRoot = null;
+    }
+    arPlaced = false;
+
+    if (arPreviousState) {
+      scene.background = arPreviousState.background;
+      if (site) site.group.visible = arPreviousState.siteVisible;
+      if (horizon) horizon.group.visible = arPreviousState.horizonVisible;
+      arPreviousState = null;
+    }
+    if (renderer?.xr) renderer.xr.enabled = false;
+    if (button) {
+      button.disabled = false;
+      setLabel('AR preview', false);
+    }
+  }
+
+  function updateARFrame(frame) {
+    if (!arSession || !frame || !arHitTestSource || !arReticle) return;
+    const hits = frame.getHitTestResults(arHitTestSource);
+    if (!hits.length) {
+      arReticle.visible = false;
+      return;
+    }
+    const pose = hits[0].getPose(renderer.xr.getReferenceSpace());
+    if (!pose) {
+      arReticle.visible = false;
+      return;
+    }
+    arReticle.matrix.fromArray(pose.transform.matrix);
+    arReticle.matrix.decompose(arReticle.position, arReticle.quaternion, arReticle.scale);
+    arReticle.matrixWorldNeedsUpdate = true;
+    arReticle.visible = true;
+  }
+
+  // Expose a small internal hook used by the render loop without making AR a
+  // requirement for booting on browsers that do not implement WebXR.
+  window.__IRIS_AR_UPDATE__ = updateARFrame;
 }
 
 function setupScene() {
@@ -475,18 +691,23 @@ function bindEvents() {
   }
 }
 
-function animate() {
+function animate(timestamp, xrFrame) {
   if (disposed) return;
   const rawDt = clock.getDelta();
   const dt = Math.min(rawDt, 0.05);
-  quality?.sample(rawDt, !director.isIntroPlaying);
-  if (mode === 'free' && freeLook.enabled) {
+  const presentingAR = Boolean(renderer?.xr?.isPresenting);
+  quality?.sample(rawDt, !director.isIntroPlaying && !presentingAR);
+  if (presentingAR) {
+    window.__IRIS_AR_UPDATE__?.(xrFrame);
+  } else if (mode === 'free' && freeLook.enabled) {
     freeLook.update(dt);
   } else {
     director.update(dt);
   }
-  guidedTour?.update(dt, Boolean(director?.isTransitioning));
-  if (site) site.update(dt);
+  if (!presentingAR) {
+    guidedTour?.update(dt, Boolean(director?.isTransitioning));
+    if (site) site.update(dt);
+  }
   renderFrame(dt);
 }
 
@@ -607,6 +828,7 @@ async function boot() {
     director.update(0);
     renderFrame(0);
     renderer.setAnimationLoop(animate);
+    configureARButton();
 
     // Expose a diagnostic surface for automated checks and curious visitors.
     window.__IRIS_APP__ = {
@@ -670,6 +892,8 @@ async function boot() {
           timeOfDay: lightingController?.getState?.().hour ?? null,
           guidedTourActive: Boolean(guidedTour?.active),
           facadeInspectionActive: Boolean(facadeInspector?.enabled),
+          arPresenting: Boolean(renderer.xr?.isPresenting),
+          arModelPlaced: Boolean(arPlaced),
           renderSize: {
             width: renderer.domElement.width,
             height: renderer.domElement.height,
