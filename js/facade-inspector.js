@@ -114,9 +114,17 @@ export class FacadeInspector {
     const point = hit.point;
     const object = hit.object;
     const name = String(object.name || '').toLowerCase();
-    const normal = hit.face?.normal
+    let normal = hit.face?.normal
       ? hit.face.normal.clone().applyMatrix3(new THREE.Matrix3().getNormalMatrix(object.matrixWorld)).normalize()
       : new THREE.Vector3(0, 0, point.z >= 0 ? 1 : -1);
+    if (object.isInstancedMesh && Number.isInteger(hit.instanceId) && hit.face?.normal) {
+      const instanceMatrix = new THREE.Matrix4();
+      object.getMatrixAt(hit.instanceId, instanceMatrix);
+      const combined = object.matrixWorld.clone().multiply(instanceMatrix);
+      normal = hit.face.normal.clone()
+        .applyMatrix3(new THREE.Matrix3().getNormalMatrix(combined))
+        .normalize();
+    }
 
     let kind = 'elevation';
     if (point.y >= ROOF_Y - 0.9) kind = 'roof';
