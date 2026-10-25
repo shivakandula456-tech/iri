@@ -293,7 +293,6 @@ function configureARButton() {
       await renderer.xr.setSession(session);
       session.addEventListener('end', restoreARScene, { once: true });
       document.body.classList.add('ar-active');
-      renderer.setAnimationLoop(animate);
       setLabel('AR active', true);
       ui.showToast('Move your phone to find a surface, then tap to place the miniature.');
     } catch (error) {
