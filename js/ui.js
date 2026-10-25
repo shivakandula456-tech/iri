@@ -19,6 +19,8 @@ export function createUI({
   onMode = () => {},
   onReplayIntro = () => {},
   onGuidedTourToggle = () => {},
+  onInspectToggle = () => {},
+  onClearInspection = () => {},
   onSkipIntro = () => {},
   onSheetOpen = () => {},
   onSheetClose = () => {}
@@ -40,6 +42,16 @@ export function createUI({
     replayIntro: byId('replayIntro'),
     guidedTourButton: byId('guidedTourButton'),
     guidedTourLabel: byId('guidedTourLabel'),
+    facadeInspectButton: byId('facadeInspectButton'),
+    facadeInspectLabel: byId('facadeInspectLabel'),
+    facadeInfo: byId('facadeInfo'),
+    facadeInfoKicker: byId('facadeInfoKicker'),
+    facadeInfoTitle: byId('facadeInfoTitle'),
+    facadeInfoDescription: byId('facadeInfoDescription'),
+    facadeInfoSide: byId('facadeInfoSide'),
+    facadeInfoFloor: byId('facadeInfoFloor'),
+    facadeInfoConfidence: byId('facadeInfoConfidence'),
+    facadeInfoClose: byId('facadeInfoClose'),
     aboutButton: byId('aboutButton'),
     fullscreenButton: byId('fullscreenButton'),
     fullscreenLabel: byId('fullscreenLabel'),
@@ -264,6 +276,8 @@ export function createUI({
   elements.modeFree.addEventListener('click', () => onMode('free'));
   elements.replayIntro.addEventListener('click', () => onReplayIntro());
   elements.guidedTourButton.addEventListener('click', () => onGuidedTourToggle());
+  elements.facadeInspectButton.addEventListener('click', () => onInspectToggle());
+  elements.facadeInfoClose.addEventListener('click', () => onClearInspection());
   elements.aboutButton.addEventListener('click', () => openSheet());
   elements.aboutClose.addEventListener('click', () => closeSheet());
   elements.aboutPanel.querySelector('[data-close-sheet]')?.addEventListener('click', () => closeSheet());
@@ -306,6 +320,30 @@ export function createUI({
       elements.guidedTourButton.title = active
         ? `${state.label || 'Guided tour'} — click to stop`
         : 'Play the guided exterior tour';
+    },
+    setInspectionState(active) {
+      const enabled = Boolean(active);
+      elements.facadeInspectButton.setAttribute('aria-pressed', String(enabled));
+      elements.facadeInspectButton.classList.toggle('is-inspection-active', enabled);
+      elements.facadeInspectLabel.textContent = enabled ? 'Inspect on' : 'Inspect';
+      elements.facadeInspectButton.title = enabled
+        ? 'Click a building surface to inspect it; select again to stop'
+        : 'Turn on facade inspection';
+      if (!enabled) elements.facadeInfo.hidden = true;
+    },
+    showFacadeInfo(info) {
+      if (!info) return;
+      elements.facadeInfoKicker.textContent = info.confidence || 'CONCEPTUAL EXTERIOR';
+      elements.facadeInfoTitle.textContent = info.title || 'Exterior feature';
+      elements.facadeInfoDescription.textContent = info.description || '';
+      elements.facadeInfoSide.textContent = info.side || 'Exterior';
+      elements.facadeInfoFloor.textContent = info.floor || '';
+      elements.facadeInfoConfidence.textContent = 'Conceptual / inferred geometry · not an approved architectural detail';
+      elements.facadeInfo.hidden = false;
+      announce(`${info.title || 'Exterior feature'} selected. ${info.side || ''}. ${info.floor || ''}.`);
+    },
+    clearFacadeInfo() {
+      elements.facadeInfo.hidden = true;
     },
     setPointerLocked,
     setLoading,
