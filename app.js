@@ -20,6 +20,7 @@ import { createUI } from './js/ui.js';
 import { CameraDirector, PRESETS } from './js/camera-director.js';
 import { GuidedTour } from './js/guided-tour.js';
 import { LightingController } from './js/lighting-controller.js';
+import { FacadeInspector } from './js/facade-inspector.js';
 import { FreeLookController } from './js/free-look.js';
 import { QualityController } from './js/quality.js';
 import { disposeSceneResources } from './js/utils.js';
@@ -36,6 +37,7 @@ let director;
 let freeLook;
 let guidedTour;
 let lightingController;
+let facadeInspector;
 let site;
 let building;
 let sky;
@@ -217,6 +219,11 @@ function setMode(nextMode) {
   const next = nextMode === 'free' ? 'free' : 'orbit';
   if (next === mode) return;
 
+  if (next === 'free' && facadeInspector?.enabled) {
+    facadeInspector.setEnabled(false);
+    ui.setInspectionState(false);
+  }
+
   if (next === 'free') {
     if (director.isIntroPlaying) director.stopIntro({ takeControl: true });
     if (director.isTransitioning) director.interrupt();
@@ -260,6 +267,24 @@ function replayIntro() {
 
 function skipIntro() {
   if (director && director.isIntroPlaying) director.skipIntro();
+}
+
+function toggleFacadeInspection() {
+  if (!ready || !facadeInspector) return;
+  if (mode === 'free') setMode('orbit');
+  if (guidedTour?.active) guidedTour.stop({ reason: 'manual' });
+  const active = !facadeInspector.enabled;
+  facadeInspector.setEnabled(active);
+  ui.setInspectionState(active);
+  ui.showToast(active
+    ? 'Facade inspection active — select a building surface.'
+    : 'Facade inspection turned off.');
+}
+
+function clearFacadeInspection() {
+  if (facadeInspector?.enabled) facadeInspector.setEnabled(false);
+  ui?.setInspectionState(false);
+  ui?.clearFacadeInfo();
 }
 
 function toggleGuidedTour() {
@@ -394,8 +419,11 @@ async function boot() {
     onMode: (next) => setMode(next),
     onReplayIntro: () => replayIntro(),
     onGuidedTourToggle: () => toggleGuidedTour(),
+    onInspectToggle: () => toggleFacadeInspection(),
+    onClearInspection: () => clearFacadeInspection(),
     onSkipIntro: () => skipIntro(),
     onSheetOpen: () => {
+      if (facadeInspector?.enabled) clearFacadeInspection();
       if (mode === 'free') setMode('orbit');
       if (director && director.isIntroPlaying) director.stopIntro({ takeControl: true });
       if (director && director.isTransitioning) director.interrupt();
@@ -446,6 +474,14 @@ async function boot() {
       building = buildBuilding(materials);
     }
     scene.add(building.group);
+    facadeInspector = new FacadeInspector({
+      scene,
+      camera,
+      domElement: renderer.domElement,
+      buildingGroup: building.group,
+      onSelect: (feature) => ui.showFacadeInfo(feature),
+      onClear: () => ui.clearFacadeInfo()
+    });
     scene.userData.lighting = lighting;
     ui.setLoading(0.58, 'Planting the grounds and arrival court…');
     await nextFrame();
@@ -498,6 +534,7 @@ async function boot() {
       freeLook,
       guidedTour,
       lightingController,
+      facadeInspector,
       site,
       building,
       sky,
@@ -511,6 +548,7 @@ async function boot() {
       goToPreset,
       replayIntro,
       toggleGuidedTour,
+      toggleFacadeInspection,
       startIntro(options = {}) {
         if (mode === 'free') setMode('orbit');
         director.startIntro({ reducedMotion: Boolean(options.reducedMotion) });
@@ -546,6 +584,7 @@ async function boot() {
           quality: quality?.state || null,
           timeOfDay: lightingController?.getState?.().hour ?? null,
           guidedTourActive: Boolean(guidedTour?.active),
+          facadeInspectionActive: Boolean(facadeInspector?.enabled),
           renderSize: {
             width: renderer.domElement.width,
             height: renderer.domElement.height,
