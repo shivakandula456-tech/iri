@@ -63,6 +63,10 @@
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.2"></circle><path d="m15.1 15.1 5 5"></path><path d="M8.2 10.5h4.6"></path><path d="M10.5 8.2v4.6"></path></svg>
           <span id="facadeInspectLabel">Inspect</span>
         </button>
+        <button id="blueprintToggle" type="button" class="top-button blueprint-button" aria-pressed="false" title="Reveal the building's architectural edge geometry">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"></path><path d="m4.5 7.7 7.5 4.4 7.5-4.4M12 12.1V21"></path></svg>
+          <span id="blueprintToggleLabel">Blueprint</span>
+        </button>
         <button id="arPreviewButton" type="button" class="top-button ar-preview-button" title="Place a miniature exterior model in augmented reality" hidden>
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3Z"></path><path d="m4.5 7.8 7.5 4.3 7.5-4.3"></path><path d="M12 12.1V21"></path></svg>
           <span id="arPreviewLabel">AR preview</span>
@@ -91,6 +95,22 @@
         </button>
       </div>
     </details>
+
+    <aside id="directorPanel" class="director-panel" aria-label="Guided tour director controls" hidden>
+      <div class="director-panel-heading">
+        <div>
+          <span class="director-kicker">DIRECTOR'S CUT</span>
+          <strong id="tourStepTitle">Three-quarter overview</strong>
+        </div>
+        <span id="tourStepCount" class="director-step-count">01 / 09</span>
+      </div>
+      <div class="director-progress" aria-hidden="true"><span id="tourProgress"></span></div>
+      <div class="director-controls">
+        <button id="tourPauseButton" type="button" aria-pressed="false"><span id="tourPauseLabel">Pause</span></button>
+        <button id="tourNextButton" type="button">Next stop</button>
+        <button id="tourSkipButton" type="button">Skip tour</button>
+      </div>
+    </aside>
 
     <div class="concept-note" aria-hidden="true">
       <span class="concept-line"></span>
