@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { BUILDING, ROOF_Y } from './config.js';
 
 const _position = new THREE.Vector3();
 const _quaternion = new THREE.Quaternion();
@@ -16,7 +17,9 @@ const _euler = new THREE.Euler();
 export class ModelBuilder {
   constructor(label = 'model') {
     this.label = label;
+    this.isTowerBuilder = /tower/i.test(label);
     this.batches = new Map();
+    this.floorGroups = new Map();
     this.unique = [];
     this.instanceCount = 0;
     this.group = new THREE.Group();
@@ -37,7 +40,8 @@ export class ModelBuilder {
       geometry.uuid,
       options.castShadow ? 1 : 0,
       options.receiveShadow ? 1 : 0,
-      options.renderOrder || 0
+      options.renderOrder || 0,
+      options.layer || ''
     ].join('|');
   }
 
@@ -45,7 +49,8 @@ export class ModelBuilder {
     const castShadow = options.castShadow ?? options.cast ?? true;
     const receiveShadow = options.receiveShadow ?? options.receive ?? true;
     const renderOrder = options.renderOrder || 0;
-    const key = this._batchKey(material, geometry, { castShadow, receiveShadow, renderOrder });
+    const layer = options.layer || null;
+    const key = this._batchKey(material, geometry, { castShadow, receiveShadow, renderOrder, layer });
     if (!this.batches.has(key)) {
       this.batches.set(key, {
         material,
@@ -53,6 +58,7 @@ export class ModelBuilder {
         castShadow,
         receiveShadow,
         renderOrder,
+        layer,
         matrices: [],
         colors: [],
         hasColor: false
@@ -62,7 +68,17 @@ export class ModelBuilder {
   }
 
   _add(material, geometry, position, scale, rotation = [0, 0, 0], options = {}) {
-    const batch = this._batch(material, geometry, options);
+    // Only tower batches are floor-classified. Site builders share this utility
+    // but must never be mistaken for residential levels.
+    let layer = options.layer || null;
+    const objectHeight = Math.abs(scale[1]);
+    if (!layer && this.isTowerBuilder && objectHeight <= BUILDING.floorHeight * 1.12 &&
+        position[1] >= BUILDING.groundHeight - 0.3 && position[1] < ROOF_Y - 0.35) {
+      const floorNumber = Math.floor((position[1] - BUILDING.groundHeight) / BUILDING.floorHeight) + 1;
+      if (floorNumber >= 1 && floorNumber <= BUILDING.levels) layer = `floor-${floorNumber}`;
+    }
+    const batchOptions = layer ? { ...options, layer } : options;
+    const batch = this._batch(material, geometry, batchOptions);
     _position.set(position[0], position[1], position[2]);
     _scale.set(scale[0], scale[1], scale[2]);
     _euler.set(rotation[0] || 0, rotation[1] || 0, rotation[2] || 0, 'YXZ');
@@ -170,7 +186,20 @@ export class ModelBuilder {
       mesh.instanceMatrix.needsUpdate = true;
       mesh.computeBoundingSphere();
       mesh.computeBoundingBox();
-      this.group.add(mesh);
+      let target = this.group;
+      if (batch.layer) {
+        if (!this.floorGroups.has(batch.layer)) {
+          const floorNumber = Number(batch.layer.replace('floor-', ''));
+          const floorGroup = new THREE.Group();
+          floorGroup.name = `Floor ${String(floorNumber).padStart(2, '0')} · facade geometry`;
+          floorGroup.userData.floorNumber = floorNumber;
+          floorGroup.userData.role = 'floor-facade-layer';
+          this.floorGroups.set(batch.layer, floorGroup);
+          this.group.add(floorGroup);
+        }
+        target = this.floorGroups.get(batch.layer);
+      }
+      target.add(mesh);
     }
 
     if (parent) parent.add(this.group);
