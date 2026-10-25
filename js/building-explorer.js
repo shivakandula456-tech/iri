@@ -482,6 +482,7 @@ export class BuildingExplorer {
     const saved = this.savedExterior;
     if (!saved) {
       this.active = false;
+      this.floorHighlight.visible = false;
       this._emitState();
       return;
     }
@@ -494,6 +495,7 @@ export class BuildingExplorer {
       this.controls.enabled = saved.enabled;
       if (this.site?.group) this.site.group.visible = saved.siteVisible;
       this.active = false;
+      this.floorHighlight.visible = false;
       this.flight = null;
       this.savedExterior = null;
       this._emitState();
