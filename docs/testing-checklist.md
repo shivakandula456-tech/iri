@@ -36,10 +36,13 @@ For all pending rows, record the browser/OS, actual outcome, notes and retest ou
 | M | Static deployment | Relative assets resolve; no machine-specific paths or required backend; GitHub Pages works | Pending — not run |
 | N | Scope compliance | No apartment interiors, floor plans, flat selectors, pricing, booking or payment workflows | Pending — code inspection supports scope; final browser regression pending |
 
+| O | Guided exterior exploration | Tour moves through overview, front, entrance, right, rear, left, elevated, roof and Home; manual camera input stops the tour immediately | Pending — not run on this branch |
+| P | Time-of-day atmosphere | Slider updates sky, lighting and exposure; environment reflections refresh after release without freezing the viewer | Pending — not run on this branch |
+
 ## Testing environment limitation
 
 The test environment returned `ERR_BLOCKED_BY_ADMINISTRATOR` for navigation to both a local static HTTP URL and the local `file://` URL. A separate headless Chromium run also failed to initialize its software graphics context. Therefore, no interactive runtime test is claimed as passed here.
 
 ## Release gate
 
-Do not mark this concept acceptance-complete until tests A–N have been run in a normal browser, actual defects have been fixed, and the affected tests have been repeated. Save current screenshots and the final browser-console/network notes under `docs/evidence/` after that test pass.
+Do not mark this concept acceptance-complete until tests A–P have been run in a normal browser, actual defects have been fixed, and the affected tests have been repeated. Save current screenshots and the final browser-console/network notes under `docs/evidence/` after that test pass.
