@@ -18,6 +18,7 @@ export function createUI({
   onPreset = () => {},
   onMode = () => {},
   onReplayIntro = () => {},
+  onGuidedTourToggle = () => {},
   onSkipIntro = () => {},
   onSheetOpen = () => {},
   onSheetClose = () => {}
@@ -37,6 +38,8 @@ export function createUI({
     presetRail: byId('presetRail'),
     hintText: byId('hintText'),
     replayIntro: byId('replayIntro'),
+    guidedTourButton: byId('guidedTourButton'),
+    guidedTourLabel: byId('guidedTourLabel'),
     aboutButton: byId('aboutButton'),
     fullscreenButton: byId('fullscreenButton'),
     fullscreenLabel: byId('fullscreenLabel'),
@@ -260,6 +263,7 @@ export function createUI({
   elements.modeOrbit.addEventListener('click', () => onMode('orbit'));
   elements.modeFree.addEventListener('click', () => onMode('free'));
   elements.replayIntro.addEventListener('click', () => onReplayIntro());
+  elements.guidedTourButton.addEventListener('click', () => onGuidedTourToggle());
   elements.aboutButton.addEventListener('click', () => openSheet());
   elements.aboutClose.addEventListener('click', () => closeSheet());
   elements.aboutPanel.querySelector('[data-close-sheet]')?.addEventListener('click', () => closeSheet());
@@ -292,6 +296,17 @@ export function createUI({
     },
     setMode,
     setPresetActive,
+    setGuidedTourState(state = {}) {
+      const active = Boolean(state.active);
+      elements.guidedTourButton.setAttribute('aria-pressed', String(active));
+      elements.guidedTourButton.classList.toggle('is-tour-active', active);
+      elements.guidedTourLabel.textContent = active
+        ? `Tour ${state.step}/${state.total}`
+        : 'Guided tour';
+      elements.guidedTourButton.title = active
+        ? `${state.label || 'Guided tour'} — click to stop`
+        : 'Play the guided exterior tour';
+    },
     setPointerLocked,
     setLoading,
     hideLoading,
