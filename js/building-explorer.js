@@ -196,6 +196,17 @@ export class BuildingExplorer {
       name: 'Illustrative interior details',
       color: 0x51575a, roughness: 0.68
     });
+    const warmFixtureMaterial = new THREE.MeshStandardMaterial({
+      name: 'Illustrative warm ceiling fixture',
+      color: 0xf4d1a0,
+      emissive: 0xff9a40,
+      emissiveIntensity: 0.02,
+      roughness: 0.38,
+      metalness: 0.04
+    });
+    this.interiorLights = [];
+    this.interiorGlowMaterial = warmFixtureMaterial;
+    this.interiorLightingHour = 18;
 
     const addBox = (parent, name, size, position, material) => {
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), material);
@@ -281,6 +292,18 @@ export class BuildingExplorer {
     addBox(balcony, 'Balcony bench — illustrative', [2.8, 0.38, 0.48], [-3.4, 0.3, 7.1], trimMaterial);
     addBox(balcony, 'Balcony planter — illustrative', [1.5, 0.44, 0.48], [5.1, 0.34, 7.2], darkMaterial);
 
+    // Local warm lights and small ceiling fixtures react to the same conceptual
+    // time-of-day control as the exterior, but exist only inside the apartment.
+    for (const [x, z] of [[-7.0, 1.4], [0.0, 1.4], [7.0, 1.4], [-6.8, -3.9]]) {
+      addBox(root, 'Ceiling fixture — illustrative', [0.72, 0.055, 0.18], [x, 2.43, z], warmFixtureMaterial);
+      const light = new THREE.PointLight(0xffc98c, 0.08, 9.5, 2);
+      light.name = 'Illustrative warm apartment light';
+      light.position.set(x, 2.24, z);
+      light.castShadow = false;
+      root.add(light);
+      this.interiorLights.push(light);
+    }
+
     this.roomObjects = roomMap;
     // A lightweight X/Z collision map stops the walk-through from passing
     // straight through conceptual partitions and furnishings. It is not a
@@ -301,7 +324,7 @@ export class BuildingExplorer {
         });
       }
     });
-    this.interiorMaterials = [floorMaterial, wallMaterial, trimMaterial, darkMaterial, ...Array.from(roomMap.values(), (item) => item.zone.material)];
+    this.interiorMaterials = [floorMaterial, wallMaterial, trimMaterial, darkMaterial, warmFixtureMaterial, ...Array.from(roomMap.values(), (item) => item.zone.material)];
     root.visible = true;
     return root;
   }
@@ -382,6 +405,19 @@ export class BuildingExplorer {
       this._flyTo(this._floorCameraPosition(), this._floorTarget(), 1000, mode === 'cutaway' || mode === 'xray' ? 5 : 3);
     }
     this._emitState();
+  }
+
+  setInteriorLighting(hour) {
+    const nextHour = clamp(Number(hour) || 18, 7, 20);
+    const nightGlow = THREE.MathUtils.smoothstep(nextHour, 16.5, 20);
+    this.interiorLightingHour = nextHour;
+    if (this.interiorGlowMaterial) {
+      this.interiorGlowMaterial.emissiveIntensity = 0.02 + nightGlow * 1.18;
+      this.interiorGlowMaterial.needsUpdate = true;
+    }
+    for (const light of this.interiorLights || []) {
+      light.intensity = 0.04 + nightGlow * 2.0;
+    }
   }
 
   setCutDepth(depth) {
@@ -994,6 +1030,7 @@ export class BuildingExplorer {
       walking: this.walking,
       selectedRoom: this.selectedRoom,
       cutDepth: this.cutDepth,
+      interiorLightingHour: this.interiorLightingHour,
       cutDistanceFromFront: Number((HALF_D - this.cutDepth).toFixed(2)),
       roomTitle: selected?.definition.label || 'Room',
       roomDescription: selected?.definition.description || '',
