@@ -190,7 +190,7 @@ export function createUI({
     elements.intro.style.setProperty('--intro-duration', `${duration}ms`);
     elements.skipIntro.tabIndex = 0;
     // Restart the CSS progress animation on every replay.
-    elements.intro.classList.remove('is-visible', 'is-running');
+    elements.intro.classList.remove('is-visible', 'is-running', 'is-reduced', 'is-motion');
     void elements.intro.offsetWidth;
     elements.intro.classList.add('is-visible', 'is-running', reducedMotion ? 'is-reduced' : 'is-motion');
     document.body.classList.add('intro-active');
@@ -205,7 +205,7 @@ export function createUI({
     document.body.classList.remove('intro-active');
     introTimer = window.setTimeout(() => {
       elements.intro.hidden = true;
-      elements.intro.classList.remove('is-leaving', 'is-running');
+      elements.intro.classList.remove('is-leaving', 'is-running', 'is-reduced', 'is-motion');
     }, 520);
   }
 
