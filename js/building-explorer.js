@@ -414,6 +414,15 @@ export class BuildingExplorer {
         1200,
         13
       );
+    } else if (mode === 'vertical') {
+      // Keep the entire section in frame; selected-floor modes intentionally
+      // fly closer, but a vertical tower cutaway must show multiple levels.
+      this._flyTo(
+        new THREE.Vector3(88, Math.max(ROOF_Y + 18, 68), 116),
+        new THREE.Vector3(0, ROOF_Y * 0.52, 0),
+        1200,
+        8
+      );
     } else {
       this._flyTo(this._floorCameraPosition(), this._floorTarget(), 1000, mode === 'cutaway' || mode === 'xray' ? 5 : 3);
     }
