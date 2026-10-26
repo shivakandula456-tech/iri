@@ -26,6 +26,7 @@ const assert = (condition, message) => {
     const page = await browser.newPage({ viewport: { width: 1440, height: 960 }, deviceScaleFactor: 1 });
     page.setDefaultTimeout(15000);
     page.on('pageerror', (error) => failures.push(error.message));
+    await page.addInitScript(() => { window.__IRIS_SMOKE_ERRORS__ = []; window.addEventListener('error', (event) => window.__IRIS_SMOKE_ERRORS__.push(event.message)); });
     await page.goto(baseURL, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => Boolean(window.__IRIS_APP__?.ready), null, { timeout: 60000 });
     await page.waitForSelector('#irisExperienceMenuButton:not([disabled])', { timeout: 20000 });
@@ -100,10 +101,40 @@ const assert = (condition, message) => {
     await returnExterior();
 
     await openFeature('portal');
-    await page.waitForFunction(() => {
-      const explorer = window.__IRIS_APP__?.buildingExplorer;
-      return explorer?.active && explorer.mode === 'interior' && explorer.walking === true;
-    }, null, { timeout: 25000 });
+    const readPortalState = () => page.evaluate(() => {
+      const app = window.__IRIS_APP__;
+      const explorer = app?.buildingExplorer;
+      const toast = document.querySelector('#toast');
+      const button = document.getElementById('explorerEnterApartment');
+      return {
+        appReady: Boolean(app?.ready),
+        explorerActive: Boolean(explorer?.active),
+        mode: explorer?.mode ?? null,
+        walking: explorer?.walking ?? null,
+        flightActive: Boolean(explorer?.flight),
+        flightElapsed: explorer?.flight?.elapsed ?? null,
+        flightDuration: explorer?.flight?.duration ?? null,
+        enterButtonDisabled: button?.disabled ?? null,
+        toastText: toast?.textContent?.trim() ?? '',
+        pageErrors: window.__IRIS_SMOKE_ERRORS__ || []
+      };
+    });
+    try {
+      await page.waitForFunction(() => {
+        const explorer = window.__IRIS_APP__?.buildingExplorer;
+        return explorer?.active && explorer.mode === 'interior';
+      }, null, { timeout: 12000 });
+    } catch (error) {
+      throw new Error('Portal did not enter interior mode: ' + JSON.stringify(await readPortalState()) + '; ' + error.message);
+    }
+    try {
+      await page.waitForFunction(() => {
+        const explorer = window.__IRIS_APP__?.buildingExplorer;
+        return explorer?.mode === 'interior' && explorer.walking === true && !explorer.flight;
+      }, null, { timeout: 10000 });
+    } catch (error) {
+      throw new Error('Portal camera/walking transition did not finish: ' + JSON.stringify(await readPortalState()) + '; ' + error.message);
+    }
     await page.locator('#explorerWalkControls').waitFor({ state: 'visible', timeout: 5000 });
     assert(true, 'building portal enters the apartment walkthrough');
     await returnExterior();
