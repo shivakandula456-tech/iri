@@ -138,6 +138,16 @@ const assert = (condition, message) => {
     for (const layer of ['glazing', 'massing', 'metalwork', 'balustrades', 'roof', 'site']) {
       await assertLayerToggle(layer);
     }
+    await page.locator('#explorerFloorMode').click();
+    await waitForExplorerMode('floor');
+    await page.waitForFunction(() => window.__IRIS_APP__?.site?.group?.visible === false, null, { timeout: 5000 });
+    await page.locator('[data-explorer-layer="site"]').click();
+    await page.locator('[data-explorer-layer="site"]').click();
+    await page.waitForFunction(() => window.__IRIS_APP__?.site?.group?.visible === false, null, { timeout: 5000 });
+    await page.locator('[data-explorer-layer="roof"]').click();
+    await page.locator('[data-explorer-layer="roof"]').click();
+    await page.waitForFunction(() => window.__IRIS_APP__?.buildingExplorer?.staticChildren?.every(({ object }) => object.visible === false), null, { timeout: 5000 });
+    assert(true, 'architectural layer toggles respect isolated-floor visibility rules');
     await returnExterior();
 
     await openFeature('journey');
