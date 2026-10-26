@@ -386,7 +386,7 @@ export class BuildingExplorer {
 
   setMode(mode) {
     if (!this.active) return;
-    const allowed = new Set(['exterior', 'xray', 'cutaway', 'exploded', 'floor']);
+    const allowed = new Set(['exterior', 'xray', 'cutaway', 'vertical', 'exploded', 'floor']);
     if (!allowed.has(mode)) return;
     this.walking = false;
     this.rotateEnabled = false;
@@ -600,6 +600,15 @@ export class BuildingExplorer {
       this.interiorRoot.position.y = this._floorBottom();
       const plate = this.floorPlates.get(this.selectedFloor);
       if (plate) plate.visible = true;
+    } else if (this.mode === 'vertical') {
+      // Clip the full tower, not just the selected floor, to expose a vertical
+      // section. Floor plates and the illustrative selected-floor rooms remain
+      // visible as reading aids; the interior layout is explicitly conceptual.
+      this._applyClipping({ selectedFloorOnly: false });
+      this.interiorRoot.visible = true;
+      this.interiorRoot.position.y = this._floorBottom();
+      for (const plate of this.floorPlates.values()) plate.visible = true;
+      this.floorHighlight.visible = false;
     } else if (this.mode === 'exploded') {
       if (this.site?.group) this.site.group.visible = false;
       for (const { object } of this.staticChildren) object.visible = false;
