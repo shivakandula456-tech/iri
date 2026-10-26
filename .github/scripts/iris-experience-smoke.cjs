@@ -92,10 +92,18 @@ const assert = (condition, message) => {
     assert(await page.locator('#explorerFloorRail').isVisible(), 'architectural layer option opens floor and layer controls');
     assert(await page.locator('[data-explorer-layer]').count() === 6, 'architectural layer explorer exposes six layer groups');
     await page.locator('[data-explorer-layer="glazing"]').click();
-    await page.waitForFunction(() => window.__IRIS_APP__?.buildingExplorer?.layerVisibility?.glazing === false, null, { timeout: 5000 });
-    assert(await page.locator('[data-explorer-layer="glazing"]').getAttribute('aria-pressed') === 'false', 'glazing visibility toggle updates the model state');
+    await page.waitForFunction(() => {
+      const explorer = window.__IRIS_APP__?.buildingExplorer;
+      const records = explorer?.layerObjects?.get('glazing');
+      return explorer?.layerVisibility?.glazing === false && records?.length > 0 && records.every(({ object }) => object.visible === false);
+    }, null, { timeout: 5000 });
+    assert(await page.locator('[data-explorer-layer="glazing"]').getAttribute('aria-pressed') === 'false', 'glazing toggle hides the model meshes and updates its button state');
     await page.locator('[data-explorer-layer="glazing"]').click();
-    await page.waitForFunction(() => window.__IRIS_APP__?.buildingExplorer?.layerVisibility?.glazing === true, null, { timeout: 5000 });
+    await page.waitForFunction(() => {
+      const explorer = window.__IRIS_APP__?.buildingExplorer;
+      const records = explorer?.layerObjects?.get('glazing');
+      return explorer?.layerVisibility?.glazing === true && records?.length > 0 && records.every(({ object, visible }) => object.visible === visible);
+    }, null, { timeout: 5000 });
     await returnExterior();
 
     await openFeature('journey');
