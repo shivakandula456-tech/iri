@@ -68,6 +68,11 @@ style.textContent = `
  .iris-experience-card-detail { max-width:42ch; }
  .iris-experience-footer { padding-bottom:var(--safe-bottom); }
  .iris-tool-panel { top:auto; right:8px; bottom:calc(92px + var(--safe-bottom)); width:calc(100vw - 16px); max-height:68dvh; }
+ #replayIntro,#projectSiteLink,#guidedTourButton,#facadeInspectButton,#blueprintToggle,#exploreFloorsButton,#arPreviewButton { display:none !important; }
+}
+@media(max-width:380px) {
+ .iris-experience-trigger { width:38px !important; min-width:38px; padding:0 !important; }
+ .iris-experience-trigger span { display:none !important; }
 }
 @media(prefers-reduced-motion:reduce) { .iris-experience-menu,.iris-experience-card { transition:none; } .iris-transition-sweep.is-active { animation-duration:1ms; } }
 `;
