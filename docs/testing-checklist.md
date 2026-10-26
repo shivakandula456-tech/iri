@@ -66,7 +66,7 @@ The test environment returned `ERR_BLOCKED_BY_ADMINISTRATOR` for navigation to b
 
 ## Release gate
 
-Do not mark this concept acceptance-complete until tests A–AF have been run in a normal browser, actual defects have been fixed, and the affected tests have been repeated. Save current screenshots and the final browser-console/network notes under `docs/evidence/` after that test pass.
+Do not mark this concept acceptance-complete until tests A–AL have been exercised in the automated feature-branch workflow and the desktop/mobile checks that require human visual judgment have also passed. Investigate all failures, fix the actual defect, and repeat the affected tests. Save current screenshots and final browser-console/network notes under `docs/evidence/` after the visual acceptance pass.
 
 
 ## Detailed feature tests for the immersive branch
@@ -135,3 +135,17 @@ Do not mark this concept acceptance-complete until tests A–AF have been run in
 ### Interior day-to-night lighting
 - Enter the illustrative apartment and move the Atmosphere control to morning, noon, sunset and 20:00.
 - Verify the warm ceiling fixtures and room lights are subdued during daylight and brighter toward night; leave the interior and confirm the full exterior remains responsive to the same slider.
+
+
+### Unified Explore IRIS menu and eight experiences
+
+| ID | Test | Expected result | Status |
+|---|---|---|---|
+| AG | Unified menu | The Explore IRIS button opens a panel with exactly eight feature cards; close button, scrim and Escape close it; the menu can reopen without duplicating controls | Pending — CI browser test |
+| AH | Full-tower vertical cutaway | Vertical tower cutaway clips the whole modeled tower, shows illustrative floor plates, and exposes the live cut-plane slider; moving the slider changes `buildingExplorer.cutDepth` continuously; selected-floor cutaway still affects only the selected floor | Pending — CI browser test |
+| AI | Architectural layer visibility | Facade/massing, glazing, metal/bronze, balustrades, roof/crown/podium, and site/landscape toggles change visibility, keep their states synchronized with the buttons, and do not override another active layer filter | Pending — CI browser test |
+| AJ | Blueprint-to-apartment journey | Blueprint transition appears, then the viewer enters the sample apartment; repeated use does not leave Blueprint enabled or trap camera controls | Pending — CI browser test |
+| AK | Live visual comparison | Capturing view A and view B produces valid images, and moving the split slider changes the displayed boundary; clearing views returns to the empty prompt | Pending — CI browser test |
+| AL | Postcard export | Capture produces a preview and a downloadable PNG with a title and caption; closing/reopening the panel does not retain revoked blob URLs | Pending — CI browser test |
+| AM | Mobile navigation | At 390×844 and compact 320px-wide widths, the top navigation remains within the viewport, the menu cards are usable, and all eight options can be opened | Pending — CI browser test + visual check |
+| AN | Feature-branch deployment | Every push to `feature/immersive-architectural-experience` starts the workflow; verification gates publication; a successful run reports the GitHub Pages deployment URL | Pending — check Actions and Pages settings |
