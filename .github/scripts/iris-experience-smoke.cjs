@@ -77,7 +77,7 @@ const assert = (condition, message) => {
     await returnExterior();
 
     await openFeature('portal');
-    await page.waitForFunction(() => window.__IRIS_APP__?.buildingExplorer?.active && window.__IRIS_APP__?.buildingExplorer?.mode === 'interior', { timeout: 25000 });
+    await page.waitForFunction(() => window.__IRIS_APP__?.buildingExplorer?.active && window.__IRIS_APP__?.buildingExplorer?.mode === 'interior', null, { timeout: 25000 });
     assert(await page.locator('#explorerWalkControls').isVisible(), 'building portal enters the apartment walkthrough');
     await returnExterior();
 
@@ -87,7 +87,7 @@ const assert = (condition, message) => {
     await returnExterior();
 
     await openFeature('journey');
-    await page.waitForFunction(() => window.__IRIS_APP__?.buildingExplorer?.active && window.__IRIS_APP__?.buildingExplorer?.mode === 'interior', { timeout: 25000 });
+    await page.waitForFunction(() => window.__IRIS_APP__?.buildingExplorer?.active && window.__IRIS_APP__?.buildingExplorer?.mode === 'interior', null, { timeout: 25000 });
     assert(await page.locator('#explorerRoomList button').count() >= 4, 'room-to-room journey exposes room destinations');
     await returnExterior();
 
