@@ -225,10 +225,12 @@ async function waitForFlight(app) {
 }
 async function enterSampleApartment() {
   const app = await ensureExplorer();
+  if (app.buildingExplorer?.walking && app.buildingExplorer?.mode === 'interior') return app;
   await waitForFlight(app);
   clickExisting('explorerEnterApartment');
-  const entered = await waitFor(() => Boolean(app.buildingExplorer?.walking), 5000);
+  const entered = await waitFor(() => Boolean(app.buildingExplorer?.walking) && app.buildingExplorer?.mode === 'interior', 5000);
   if (!entered) throw new Error('The apartment view did not open. Use the existing Enter apartment control to retry.');
+  await waitFor(() => !app.buildingExplorer?.flight, 4000);
   return app;
 }
 async function captureSceneDataUrl() {
@@ -367,9 +369,17 @@ async function runFeature(id) {
         clickExisting('explorerReturnExterior');
         await waitFor(() => !app.buildingExplorer?.active, 2500);
       }
+      const blueprintButton = byId('blueprintToggle');
+      if (blueprintButton.getAttribute('aria-pressed') !== 'true') {
+        sweepTransition();
+        await delay(120);
+        blueprintButton.click();
+        await delay(650);
+      }
       sweepTransition();
       await delay(120);
-      clickExisting('blueprintToggle');
+      await enterSampleApartment();
+      toast('Blueprint transition complete. You are now inside the illustrative apartment.');
       return;
     }
     if (id === 'cutaway') {
@@ -415,7 +425,10 @@ menu.addEventListener('click', (event) => {
 byId('irisReturnExterior').addEventListener('click', async () => {
   try {
     const app = await readyApp();
-    if (app.buildingExplorer?.active) clickExisting('explorerReturnExterior');
+    if (app.buildingExplorer?.active) {
+      clickExisting('explorerReturnExterior');
+      await waitFor(() => !app.buildingExplorer?.active, 3000);
+    }
     const blueprint = byId('blueprintToggle');
     if (blueprint?.getAttribute('aria-pressed') === 'true') blueprint.click();
     if (byId('modeOrbit')?.getAttribute('aria-pressed') !== 'true') clickExisting('modeOrbit');
