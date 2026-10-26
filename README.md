@@ -34,7 +34,7 @@ Then open `http://localhost:8000/`. This is not an application backend and is no
 
 ## Deploy to GitHub Pages
 
-The workflow `.github/workflows/deploy-iris-pages.yml` is configured to run on pushes to `feature/immersive-architectural-experience`. It checks JavaScript syntax, required files, duplicate HTML IDs and runs Playwright browser smoke tests for all eight menu options. The deployment job publishes the static site only when verification succeeds. New pushes cancel older in-progress runs so the newest branch state is the version published.
+The workflow `.github/workflows/deploy-iris-pages.yml` runs on every push to `feature/immersive-architectural-experience` and can also be started manually from the Actions tab. It checks JavaScript syntax, required files, duplicate HTML IDs and runs Playwright browser smoke tests for the eight menu options. The deployment job publishes the static site only when verification succeeds. If several pushes arrive close together, older in-progress runs are cancelled so the newest branch state is the version published.
 
 **One-time GitHub setting:** open repository **Settings → Pages → Build and deployment → Source** and select **GitHub Actions**. If the existing Pages deployment environment has branch restrictions, allow `feature/immersive-architectural-experience` to deploy. Without this setting or permission, the workflow can run but Pages deployment may fail.
 
