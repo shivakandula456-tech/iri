@@ -146,7 +146,7 @@ async function startViewer() {
     const setLayout=l=>{root.classList.remove('lift-layout-split','lift-layout-3d','lift-layout-plan');document.documentElement.classList.toggle('lift-plan-mode',l==='plan');root.classList.add('lift-layout-'+l);root.querySelectorAll('[data-lift-layout]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.liftLayout===l)));};
     renderList();details();apply();
     root.addEventListener('click',e=>{
-      const layout=e.target.closest('[data-lift-layout']);if(layout){setLayout(layout.dataset.liftLayout);return;}
+      const layout=e.target.closest('[data-lift-layout]');if(layout){setLayout(layout.dataset.liftLayout);return;}
       const choice=e.target.closest('[data-lift-choice]'),plan=e.target.closest('[data-lift-plan]');
       if(choice||plan){const id=choice?choice.dataset.liftChoice:plan.dataset.liftPlan;selectedLiftId=selectedLiftId===id?null:id;apply();details();}
     });
