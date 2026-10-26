@@ -133,8 +133,25 @@ const assert = (condition, message) => {
 
     await page.setViewportSize({ width: 390, height: 844 });
     await menuButton.click();
-    assert(await page.locator('[data-feature]:visible').count() === 8, 'mobile menu exposes all eight experiences');
+    assert(await page.locator('[data-feature]:visible').count() === 8, '390px mobile menu exposes all eight experiences');
     await page.locator('#irisExperienceMenuClose').click();
+    let navFits = await page.evaluate(() => {
+      const button = document.getElementById('irisExperienceMenuButton').getBoundingClientRect();
+      const fullscreen = document.getElementById('fullscreenButton').getBoundingClientRect();
+      return button.left >= 0 && button.right <= window.innerWidth && fullscreen.left >= 0 && fullscreen.right <= window.innerWidth;
+    });
+    assert(navFits, 'main navigation remains within a 390px viewport');
+
+    await page.setViewportSize({ width: 320, height: 720 });
+    await menuButton.click();
+    assert(await page.locator('[data-feature]:visible').count() === 8, '320px compact mobile menu exposes all eight experiences');
+    await page.locator('#irisExperienceMenuClose').click();
+    navFits = await page.evaluate(() => {
+      const button = document.getElementById('irisExperienceMenuButton').getBoundingClientRect();
+      const fullscreen = document.getElementById('fullscreenButton').getBoundingClientRect();
+      return button.left >= 0 && button.right <= window.innerWidth && fullscreen.left >= 0 && fullscreen.right <= window.innerWidth;
+    });
+    assert(navFits, 'main navigation remains within a 320px compact viewport');
     assert(failures.length === 0, 'no unhandled browser JavaScript errors (' + failures.length + ')');
     console.log('All IRIS experience browser checks passed.');
   } finally {
