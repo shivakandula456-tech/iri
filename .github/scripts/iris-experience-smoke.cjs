@@ -52,47 +52,6 @@ const assert = (condition, message) => {
       }, null, { timeout: 12000 });
     };
 
-    await menuButton.click();
-    assert(await page.locator('[data-feature]').count() === 9, 'menu exposes all nine experiences');
-    const [liftPage] = await Promise.all([
-      page.waitForEvent('popup', { timeout: 10000 }),
-      page.locator('[data-feature="lifts"]').click()
-    ]);
-    const liftPageErrors = [];
-    liftPage.on('pageerror', (error) => {
-      liftPageErrors.push('pageerror: ' + error.message);
-      failures.push('Lift viewer: ' + error.message);
-    });
-    liftPage.on('console', (message) => {
-      if (message.type() === 'error') liftPageErrors.push('console: ' + message.text());
-    });
-    assert(new URL(liftPage.url()).pathname.endsWith('/lift-placement.html'), 'lift link opens the dedicated standalone viewer page');
-    await liftPage.waitForFunction(() => {
-      const root = document.getElementById('irisLiftViewer');
-      return Boolean(window.__IRIS_LIFT_VIEWER__?.ready || root?.dataset.state === 'error');
-    }, null, { timeout: 90000 });
-    const liftPageState = await liftPage.evaluate(() => ({
-      title: document.title,
-      url: location.href,
-      state: document.getElementById('irisLiftViewer')?.dataset.state || 'missing',
-      readyGlobal: Boolean(window.__IRIS_LIFT_VIEWER__?.ready),
-      rootHtml: document.getElementById('irisLiftViewer')?.outerHTML.slice(0, 700) || '',
-      bodyStart: document.body?.innerHTML.slice(0, 1100) || ''
-    }));
-    const liftViewerState = liftPageState.state;
-    if (liftViewerState !== 'ready') {
-      throw new Error('Lift viewer startup diagnostic=' + JSON.stringify(liftPageState) + '; browser errors=' + liftPageErrors.join(' | '));
-    }
-    assert((await liftPage.title()).includes('Lift Placement Viewer'), 'lift viewer opens in a separate browser tab');
-    assert(await liftPage.locator('#irisLiftPlan svg').count() === 1, 'conceptual 2D floor plan renders beside the 3D view');
-    await liftPage.locator('#irisLiftFloorSelect').selectOption('3');
-    assert(await liftPage.evaluate(() => window.__IRIS_LIFT_VIEWER__?.selectedFloor === 3), 'floor selector updates the selected level');
-    await liftPage.locator('[data-lift-choice="LIFT-B"]').click();
-    assert(await liftPage.evaluate(() => window.__IRIS_LIFT_VIEWER__?.selectedLiftId === 'LIFT-B'), 'individual lift can be selected');
-    await liftPage.locator('[data-lift-layout="plan"]').click();
-    assert(await liftPage.evaluate(() => window.__IRIS_LIFT_VIEWER__?.layout === 'plan'), '2D plan-only layout control works');
-    assert(await page.evaluate(() => Boolean(window.__IRIS_APP__?.ready) && !document.documentElement.classList.contains('lift-view-mode')), 'original exterior remains active in original tab');
-    await liftPage.close();
 
     await openFeature('cutaway');
     await waitForExplorerMode('vertical');
@@ -284,6 +243,51 @@ const assert = (condition, message) => {
       return button.left >= 0 && button.right <= window.innerWidth && fullscreen.left >= 0 && fullscreen.right <= window.innerWidth;
     });
     assert(navFits, 'main navigation remains within a 320px compact viewport');
+    // Run the popup test last: opening/closing a second WebGL tab can alter
+    // focus or WebGL context state, and should not disturb the main-page suite.
+    await page.setViewportSize({ width: 1440, height: 960 });
+    await menuButton.click();
+    assert(await page.locator('[data-feature]').count() === 9, 'menu exposes all nine experiences');
+    const [liftPage] = await Promise.all([
+      page.waitForEvent('popup', { timeout: 10000 }),
+      page.locator('[data-feature="lifts"]').click()
+    ]);
+    const liftPageErrors = [];
+    liftPage.on('pageerror', (error) => {
+      liftPageErrors.push('pageerror: ' + error.message);
+      failures.push('Lift viewer: ' + error.message);
+    });
+    liftPage.on('console', (message) => {
+      if (message.type() === 'error') liftPageErrors.push('console: ' + message.text());
+    });
+    assert(new URL(liftPage.url()).pathname.endsWith('/lift-placement.html'), 'lift link opens the dedicated standalone viewer page');
+    await liftPage.waitForFunction(() => {
+      const root = document.getElementById('irisLiftViewer');
+      return Boolean(window.__IRIS_LIFT_VIEWER__?.ready || root?.dataset.state === 'error');
+    }, null, { timeout: 90000 });
+    const liftPageState = await liftPage.evaluate(() => ({
+      title: document.title,
+      url: location.href,
+      state: document.getElementById('irisLiftViewer')?.dataset.state || 'missing',
+      readyGlobal: Boolean(window.__IRIS_LIFT_VIEWER__?.ready),
+      rootHtml: document.getElementById('irisLiftViewer')?.outerHTML.slice(0, 700) || '',
+      bodyStart: document.body?.innerHTML.slice(0, 1100) || ''
+    }));
+    const liftViewerState = liftPageState.state;
+    if (liftViewerState !== 'ready') {
+      throw new Error('Lift viewer startup diagnostic=' + JSON.stringify(liftPageState) + '; browser errors=' + liftPageErrors.join(' | '));
+    }
+    assert((await liftPage.title()).includes('Lift Placement Viewer'), 'lift viewer opens in a separate browser tab');
+    assert(await liftPage.locator('#irisLiftPlan svg').count() === 1, 'conceptual 2D floor plan renders beside the 3D view');
+    await liftPage.locator('#irisLiftFloorSelect').selectOption('3');
+    assert(await liftPage.evaluate(() => window.__IRIS_LIFT_VIEWER__?.selectedFloor === 3), 'floor selector updates the selected level');
+    await liftPage.locator('[data-lift-choice="LIFT-B"]').click();
+    assert(await liftPage.evaluate(() => window.__IRIS_LIFT_VIEWER__?.selectedLiftId === 'LIFT-B'), 'individual lift can be selected');
+    await liftPage.locator('[data-lift-layout="plan"]').click();
+    assert(await liftPage.evaluate(() => window.__IRIS_LIFT_VIEWER__?.layout === 'plan'), '2D plan-only layout control works');
+    assert(await page.evaluate(() => Boolean(window.__IRIS_APP__?.ready) && !document.documentElement.classList.contains('lift-view-mode')), 'original exterior remains active in original tab');
+    await liftPage.close();
+
     assert(failures.length === 0, 'no unhandled browser JavaScript errors (' + failures.length + ')');
     console.log('All IRIS experience browser checks passed.');
   } finally {
