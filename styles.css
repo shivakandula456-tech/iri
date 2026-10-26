@@ -2760,6 +2760,7 @@ html, body {
   }
   .dock { max-width: min(760px, 70vw); }
 }
+@media (max-width: 760px) {
   .light-tool {
     top: calc(112px + var(--safe-top));
     right: max(10px, var(--safe-right));
@@ -2806,11 +2807,13 @@ html, body {
     overscroll-behavior: contain;
   }
 }
+@media (max-width: 480px) {
   .light-tool, .director-panel { top: calc(104px + var(--safe-top)); }
   .hud .dock { padding: 5px; border-radius: 14px; }
   .mode-button { min-height: 40px; }
   .preset-button { flex-basis: 58px; min-width: 58px; }
 }
+@media (max-height: 560px) and (orientation: landscape) {
   .hud { padding-bottom: calc(5px + var(--safe-bottom)); }
   .dock { flex-direction: row; align-items: center; gap: 6px; }
   .preset-rail { max-width: 70vw; }
