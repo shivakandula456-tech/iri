@@ -74,7 +74,19 @@ export class BuildingExplorer {
     this.floorGroups = new Map(building.floorGroups || []);
     this.staticChildren = [];
     this.floorPlates = new Map();
+    this.layerVisibility = {
+      massing: true,
+      glazing: true,
+      metalwork: true,
+      balustrades: true,
+      roof: true,
+      site: true
+    };
+    this.layerObjects = new Map([
+      ['massing', []], ['glazing', []], ['metalwork', []], ['balustrades', []]
+    ]);
     this._captureBuildingLayers();
+    this._captureArchitecturalLayers();
     this.floorHighlight = this._createFloorHighlight();
     this.interiorRoot = new THREE.Group();
     this.interiorRoot.name = 'Interactive apartment interior container';
@@ -350,6 +362,7 @@ export class BuildingExplorer {
     };
     this.active = true;
     this.mode = 'exterior';
+    this.layerVisibility = { massing: true, glazing: true, metalwork: true, balustrades: true, roof: true, site: true };
     this.selectedFloor = clamp(this.selectedFloor, 1, BUILDING.levels);
     this.rotateEnabled = false;
     if (this.interiorAssets[this.selectedFloor]) void this.loadInteriorAsset(this.selectedFloor);
@@ -646,6 +659,47 @@ export class BuildingExplorer {
       this.floorHighlight.visible = false;
     }
     this._updateRoomZones();
+    this._applyLayerVisibility();
+  }
+
+  _captureArchitecturalLayers() {
+    const materialNames = (object) => {
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      return materials.filter(Boolean).map((material) => String(material.name || '')).join(' ').toLowerCase();
+    };
+    this.building.group.traverse((object) => {
+      if (!object.isMesh || !object.material) return;
+      const names = materialNames(object);
+      let layer = null;
+      if (names.includes('balustrade')) layer = 'balustrades';
+      else if (names.includes('glass') || names.includes('glazing')) layer = 'glazing';
+      else if (/bronze|aluminium|metal|recessed channel|rail/.test(names)) layer = 'metalwork';
+      else if (/facade white|soft white|ivory soffit|concrete|stone plinth/.test(names)) layer = 'massing';
+      if (!layer) return;
+      this.layerObjects.get(layer).push({ object, visible: object.visible });
+    });
+  }
+
+  _applyLayerVisibility() {
+    for (const [layer, records] of this.layerObjects) {
+      const enabled = this.layerVisibility[layer] !== false;
+      for (const { object, visible } of records) object.visible = visible && enabled;
+    }
+    // Non-floor batches are the procedural roof/crown, podium and entrance
+    // elements; keep this toggle's label explicit about that combined grouping.
+    for (const { object, visible } of this.staticChildren) {
+      object.visible = visible && this.layerVisibility.roof !== false;
+    }
+    if (this.site?.group) {
+      this.site.group.visible = this.siteInitialVisibility && this.layerVisibility.site !== false;
+    }
+  }
+
+  setLayerVisibility(layer, visible) {
+    if (!Object.hasOwn(this.layerVisibility, layer)) return;
+    this.layerVisibility[layer] = Boolean(visible);
+    this._applyLayerVisibility();
+    this._emitState();
   }
 
   _applyXray() {
@@ -1034,6 +1088,7 @@ export class BuildingExplorer {
       selectedFloor: this.selectedFloor,
       floorCount: BUILDING.levels,
       mode: this.mode,
+      layerVisibility: { ...this.layerVisibility },
       rotateEnabled: this.rotateEnabled,
       walking: this.walking,
       selectedRoom: this.selectedRoom,
