@@ -2446,9 +2446,9 @@ body.is-building-explorer .top-actions .explore-floors-button span {
   margin-left: 0;
   margin-right: 0;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   flex-wrap: nowrap;
-  gap: clamp(8px, 0.55vw, 10px);
+  gap: clamp(8px, 0.7vw, 12px);
   width: 100%;
   min-width: 0;
   max-width: 100%;
@@ -2553,7 +2553,7 @@ body.is-header-compact .topbar .top-button svg {
 
 /* Place the time-of-day control below the top navigation band. */
 .light-tool {
-  top: calc(132px + var(--safe-top));
+  top: calc(62px + var(--safe-top));
 }
 
 /* Narrow desktop: reduce branding and gaps modestly while retaining all
@@ -2564,7 +2564,7 @@ body.is-header-compact .topbar .top-button svg {
     padding-left: max(14px, var(--safe-left));
     padding-right: max(14px, var(--safe-right));
   }
-  .topbar .top-actions { gap: 8px; justify-content: space-between; }
+  .topbar .top-actions { gap: 8px; justify-content: flex-start; }
   .topbar .top-button {
     min-height: 38px;
     height: 38px;
@@ -2579,7 +2579,7 @@ body.is-header-compact .topbar .top-button svg {
   .topbar .brand-name { font-size: 17px; }
   .topbar .brand-sub { font-size: 6px; }
   .topbar .brand-meta { padding-left: 12px; gap: 4px; }
-  .light-tool { top: calc(114px + var(--safe-top)); }
+  .light-tool { top: calc(62px + var(--safe-top)); }
 }
 
 @media (max-width: 760px) {
@@ -2617,7 +2617,7 @@ body.is-header-compact .topbar .top-button svg {
   }
   .topbar .brand-meta > span:first-child { font-size: 8px; }
   .topbar .brand-chip { font-size: 6px; }
-  .light-tool { top: calc(98px + var(--safe-top)); }
+  .light-tool { top: calc(92px + var(--safe-top)); }
   body.is-header-compact .topbar { gap: 5px; }
   body.is-header-compact .topbar .top-button {
     min-height: 34px;
@@ -2638,7 +2638,7 @@ body.is-header-compact .topbar .top-button svg {
   .topbar .brand-meta > span:first-child { font-size: 7px; }
   .topbar .brand-chip { font-size: 5.5px; }
   .topbar .top-button { padding-left: 8px; padding-right: 8px; }
-  .light-tool { top: calc(108px + var(--safe-top)); }
+  .light-tool { top: calc(100px + var(--safe-top)); }
 }
 
 @media (max-height: 560px) and (orientation: landscape) and (max-width: 760px) {
