@@ -105,6 +105,9 @@ function createRenderer() {
     canvas,
     antialias: true,
     alpha: true,
+    // Required for the compare and postcard tools to capture the live WebGL frame.
+    // If capture becomes too expensive on target devices, move export to an explicit render target.
+    preserveDrawingBuffer: true,
     depth: true,
     stencil: false,
     powerPreference: 'high-performance'
