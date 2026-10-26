@@ -75,6 +75,7 @@ export function createUI({
     explorerModeLabel: byId('explorerModeLabel'),
     explorerFloorRail: byId('explorerFloorRail'),
     explorerExteriorMode: byId('explorerExteriorMode'),
+    explorerVerticalCutawayMode: byId('explorerVerticalCutawayMode'),
     explorerCutawayMode: byId('explorerCutawayMode'),
     explorerXrayMode: byId('explorerXrayMode'),
     explorerFloorMode: byId('explorerFloorMode'),
@@ -383,6 +384,7 @@ export function createUI({
   elements.explorerCloseButton.addEventListener('click', () => onExplorerClose());
   elements.explorerReturnExterior.addEventListener('click', () => onExplorerClose());
   elements.explorerExteriorMode.addEventListener('click', () => onExplorerMode('exterior'));
+  elements.explorerVerticalCutawayMode.addEventListener('click', () => onExplorerMode('vertical'));
   elements.explorerCutawayMode.addEventListener('click', () => onExplorerMode('cutaway'));
   elements.explorerXrayMode.addEventListener('click', () => onExplorerMode('xray'));
   elements.explorerCutDepth.addEventListener('input', () => onExplorerCutDepth(Number(elements.explorerCutDepth.value)));
@@ -465,8 +467,9 @@ export function createUI({
       const floor = Number(state.selectedFloor) || 1;
       const mode = state.mode || 'exterior';
       const modeLabels = {
-        exterior: 'Exterior highlight', xray: 'X-ray facade', cutaway: 'Architectural cutaway',
-        exploded: 'Exploded tower', floor: 'Isolated floor', interior: 'Inside apartment'
+        exterior: 'Exterior highlight', xray: 'X-ray facade', cutaway: 'Selected-floor cutaway',
+        vertical: 'Vertical tower cutaway', exploded: 'Exploded tower',
+        floor: 'Isolated floor', interior: 'Inside apartment'
       };
       elements.buildingExplorerPanel.hidden = !active;
       elements.exploreFloorsButton.setAttribute('aria-pressed', String(active));
@@ -481,7 +484,7 @@ export function createUI({
         button.classList.toggle('is-active', selected);
         button.setAttribute('aria-pressed', String(selected));
       }
-      const modeButtons = [elements.explorerExteriorMode, elements.explorerCutawayMode, elements.explorerXrayMode, elements.explorerFloorMode, elements.explorerExplodedMode];
+      const modeButtons = [elements.explorerExteriorMode, elements.explorerVerticalCutawayMode, elements.explorerCutawayMode, elements.explorerXrayMode, elements.explorerFloorMode, elements.explorerExplodedMode];
       for (const button of modeButtons) {
         const selected = button.dataset.explorerMode === mode;
         button.classList.toggle('is-active', selected);
@@ -492,13 +495,13 @@ export function createUI({
       elements.explorerRotateFloor.setAttribute('aria-pressed', String(Boolean(state.rotateEnabled)));
       elements.explorerRotateFloor.classList.toggle('is-active', Boolean(state.rotateEnabled));
       elements.explorerRotateFloor.textContent = state.rotateEnabled ? 'Drag to rotate · On' : 'Rotate floor';
-      elements.explorerRotateFloor.disabled = Boolean(state.walking) || !['floor', 'xray', 'cutaway', 'exploded'].includes(mode);
+      elements.explorerRotateFloor.disabled = Boolean(state.walking) || !['floor', 'xray', 'cutaway', 'vertical', 'exploded'].includes(mode);
       elements.explorerReassemble.hidden = mode !== 'exploded';
       elements.explorerReturnToFloor.hidden = mode !== 'interior';
-      elements.explorerCutControl.hidden = mode !== 'cutaway';
+      elements.explorerCutControl.hidden = !['cutaway', 'vertical'].includes(mode);
       elements.explorerCutDepth.value = String(state.cutDepth ?? 6);
       elements.explorerCutDepthLabel.textContent = `${Number(state.cutDistanceFromFront ?? (HALF_D - Number(state.cutDepth ?? 6))).toFixed(1)} m from front`;
-      elements.explorerRoomSection.hidden = !['xray', 'cutaway', 'floor', 'interior'].includes(mode);
+      elements.explorerRoomSection.hidden = !['xray', 'cutaway', 'vertical', 'floor', 'interior'].includes(mode);
       elements.explorerWalkControls.hidden = !Boolean(state.walking);
       elements.explorerModelNotice.textContent = state.proxyFloorsOnly
         ? 'This model has no floor-specific facade groups. Exploded view uses inferred floor datum proxies; the sample interior remains conceptual.'
