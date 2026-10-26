@@ -57,8 +57,8 @@ const assert = (condition, message) => {
     await page.locator('#irisExperienceMenuClose').click();
 
     await openFeature('cutaway');
-    await waitForExplorerMode('cutaway');
-    assert(await page.locator('#explorerCutControl').isVisible(), 'cutaway opens the cut-plane controls');
+    await waitForExplorerMode('vertical');
+    assert(await page.locator('#explorerCutControl').isVisible(), 'vertical cutaway opens the full-tower cut-plane controls');
     await returnExterior();
 
     await openFeature('blueprint');
