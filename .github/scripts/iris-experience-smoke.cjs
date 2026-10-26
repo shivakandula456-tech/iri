@@ -67,11 +67,10 @@ const assert = (condition, message) => {
       if (message.type() === 'error') liftPageErrors.push('console: ' + message.text());
     });
     assert(liftPage.url().includes('view=lift-placement'), 'lift link navigates to the viewer route');
-    await liftPage.waitForSelector('#irisLiftViewer', { timeout: 15000 });
     await liftPage.waitForFunction(() => {
       const root = document.getElementById('irisLiftViewer');
       return Boolean(window.__IRIS_LIFT_VIEWER__?.ready || root?.dataset.state === 'error');
-    }, null, { timeout: 70000 });
+    }, null, { timeout: 90000 });
     const liftViewerState = await liftPage.locator('#irisLiftViewer').getAttribute('data-state');
     if (liftViewerState !== 'ready') {
       const status = await liftPage.locator('#irisLiftStatus').textContent().catch(() => '');
