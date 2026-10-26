@@ -1,0 +1,118 @@
+name: Verify and deploy IRIS experience
+
+on:
+  push:
+    branches:
+      - feature/immersive-architectural-experience
+
+permissions:
+  contents: read
+
+concurrency:
+  group: iris-pages
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Source and browser checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            echo "Checking $file"
+            node --input-type=module --check < "$file"
+          done < <(find . -type f -name '*.js' -not -path './assets/vendor/*' -not -path './.git/*' -print0)
+          node --check .github/scripts/iris-experience-smoke.cjs
+
+      - name: Validate HTML ids and required entry files
+        run: |
+          python3 - <<'PY'
+          from collections import Counter
+          from html.parser import HTMLParser
+          from pathlib import Path
+
+          class IdParser(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.ids = []
+              def handle_starttag(self, tag, attrs):
+                  value = dict(attrs).get('id')
+                  if value:
+                      self.ids.append(value)
+
+          parser = IdParser()
+          parser.feed(Path('index.html').read_text(encoding='utf-8'))
+          duplicates = sorted(key for key, count in Counter(parser.ids).items() if count > 1)
+          if duplicates:
+              raise SystemExit('Duplicate HTML ids: ' + ', '.join(duplicates))
+          required = ['app.js', 'styles.css', 'js/experience-menu.js', 'js/building-explorer.js']
+          missing = [path for path in required if not Path(path).is_file()]
+          if missing:
+              raise SystemExit('Missing required files: ' + ', '.join(missing))
+          if './js/experience-menu.js' not in Path('index.html').read_text(encoding='utf-8'):
+              raise SystemExit('index.html does not load the experience menu')
+          print(f'HTML ids unique ({len(parser.ids)} ids); required files present.')
+          PY
+
+      - name: Install Playwright and Chromium
+        run: |
+          npm install --prefix /tmp/iris-playwright --no-save --no-package-lock --no-audit --no-fund playwright
+          /tmp/iris-playwright/node_modules/.bin/playwright install --with-deps chromium
+
+      - name: Run desktop and mobile feature smoke tests
+        env:
+          NODE_PATH: /tmp/iris-playwright/node_modules
+          IRIS_BASE_URL: http://127.0.0.1:8765/
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory . >/tmp/iris-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8765/index.html >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8765/index.html >/dev/null
+          node .github/scripts/iris-experience-smoke.cjs
+
+  deploy:
+    name: Publish to GitHub Pages
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+    steps:
+      - name: Check out deployable site
+        uses: actions/checkout@v4
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload static site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Deploy the feature branch
+        id: deployment
+        uses: actions/deploy-pages@v4
+
