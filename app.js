@@ -880,6 +880,7 @@ async function boot() {
     onExplorerRotate: () => toggleExplorerFloorRotation(),
     onExplorerRoom: (room) => selectExplorerRoom(room),
     onExplorerWalkDirection: (direction, active) => setExplorerWalkDirection(direction, active),
+    onExplorerLayerToggle: (layer, visible) => buildingExplorer?.setLayerVisibility(layer, visible),
     onClearInspection: () => clearFacadeInspection(),
     onSkipIntro: () => skipIntro(),
     onSheetOpen: () => {
