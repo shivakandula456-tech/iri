@@ -36,6 +36,31 @@ The official project page states the location as Mundhwa, Pune; configurations a
 
 The official page currently shows a June 2026 possession date, which has passed as of this audit date. The page also pairs Phase I/Phase II RERA identifiers differently between its paragraph and linked labels. Neither the possession status nor RERA IDs are asserted in this viewer pending developer confirmation.
 
+## Added runtime rendering modules
+
+The immersive interaction modules are local source files rather than external services:
+
+- `js/guided-tour.js` — authored exterior stops, pause/resume and next-stop progression for Director's Cut.
+- `js/lighting-controller.js` — conceptual time-of-day transitions, including evening window/lobby emission.
+- `js/facade-inspector.js` — raycast-based feature selection and temporary geometric annotation.
+- `js/blueprint-controller.js` — reversible edge-only rendering over the same model geometry, restoring the original mesh materials and visibility.
+- `js/camera-director.js` — camera path, presets, intro timing and interaction handoff.
+- `js/geometry-kit.js` — tags eligible procedural tower batches into floor-level groups while preserving instanced rendering where possible.
+- `js/building-explorer.js` — floor rail integration, raycast-based floor/room selection, translucent X-ray facade, draggable selected-floor cutaway plane, exploded/isolation modes, illustrative apartment and warm lighting, schematic plan interaction, bounded walk-through controls, optional per-floor GLB loading and cleanup.
+- `INTERIOR_ASSETS` is an intentionally empty map by default. No approved apartment interior `.glb` or verified apartment drawing was supplied.
+
+
+The immersive feature branch vendors the optional post-processing modules directly from the official Three.js repository at the `r164` release/tag, matching the locally bundled runtime engine:
+
+- Upstream repository: https://github.com/mrdoob/three.js
+- Upstream release path: `examples/jsm/postprocessing/` and `examples/jsm/shaders/`
+- Local destinations: `assets/vendor/postprocessing/` and `assets/vendor/shaders/`
+- Modules include EffectComposer, Pass, RenderPass, ShaderPass, OutputPass, UnrealBloomPass, MaskPass, CopyShader, LuminosityHighPassShader and OutputShader.
+- The imports are routed through the existing import map, so the normal rendering path does not fetch additional modules from a CDN.
+- The post-processing path is optional and falls back to direct WebGL rendering if it cannot initialize or later encounters a rendering exception.
+
+Source code is retained from the pinned upstream release. Review the upstream Three.js licence and include its applicable notices with redistributed code.
+
 ## Rights and release requirements
 
 The images and brand assets remain subject to the rights of Anandtara and other relevant rights holders. Confirm permission for reproduction and external deployment. Do not redistribute the reference-image folder publicly unless the rights holder has approved it.

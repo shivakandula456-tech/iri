@@ -1,4 +1,4 @@
-import { INTRO_DURATION_MS } from './config.js';
+import { BUILDING, HALF_D, INTRO_DURATION_MS } from './config.js';
 
 const ORBIT_HINT_DESKTOP = 'Drag to orbit · Scroll to zoom · Right-drag to pan';
 const ORBIT_HINT_TOUCH = 'Drag to orbit · Pinch to zoom · Two fingers to pan';
@@ -18,6 +18,24 @@ export function createUI({
   onPreset = () => {},
   onMode = () => {},
   onReplayIntro = () => {},
+  onGuidedTourToggle = () => {},
+  onGuidedPauseToggle = () => {},
+  onGuidedNext = () => {},
+  onGuidedSkip = () => {},
+  onInspectToggle = () => {},
+  onBlueprintToggle = () => {},
+  onExplorerToggle = () => {},
+  onExplorerClose = () => {},
+  onExplorerFloor = () => {},
+  onExplorerMode = () => {},
+  onExplorerCutDepth = () => {},
+  onExplorerEnter = () => {},
+  onExplorerReturnFloor = () => {},
+  onExplorerReassemble = () => {},
+  onExplorerRotate = () => {},
+  onExplorerRoom = () => {},
+  onExplorerWalkDirection = () => {},
+  onClearInspection = () => {},
   onSkipIntro = () => {},
   onSheetOpen = () => {},
   onSheetClose = () => {}
@@ -37,6 +55,57 @@ export function createUI({
     presetRail: byId('presetRail'),
     hintText: byId('hintText'),
     replayIntro: byId('replayIntro'),
+    guidedTourButton: byId('guidedTourButton'),
+    guidedTourLabel: byId('guidedTourLabel'),
+    directorPanel: byId('directorPanel'),
+    tourStepTitle: byId('tourStepTitle'),
+    tourStepCount: byId('tourStepCount'),
+    tourProgress: byId('tourProgress'),
+    tourPauseButton: byId('tourPauseButton'),
+    tourPauseLabel: byId('tourPauseLabel'),
+    tourNextButton: byId('tourNextButton'),
+    tourSkipButton: byId('tourSkipButton'),
+    blueprintToggle: byId('blueprintToggle'),
+    blueprintToggleLabel: byId('blueprintToggleLabel'),
+    exploreFloorsButton: byId('exploreFloorsButton'),
+    exploreFloorsLabel: byId('exploreFloorsLabel'),
+    buildingExplorerPanel: byId('buildingExplorerPanel'),
+    explorerCloseButton: byId('explorerCloseButton'),
+    explorerSelectedFloor: byId('explorerSelectedFloor'),
+    explorerModeLabel: byId('explorerModeLabel'),
+    explorerFloorRail: byId('explorerFloorRail'),
+    explorerExteriorMode: byId('explorerExteriorMode'),
+    explorerCutawayMode: byId('explorerCutawayMode'),
+    explorerXrayMode: byId('explorerXrayMode'),
+    explorerFloorMode: byId('explorerFloorMode'),
+    explorerCutControl: byId('explorerCutControl'),
+    explorerCutDepth: byId('explorerCutDepth'),
+    explorerCutDepthLabel: byId('explorerCutDepthLabel'),
+    explorerExplodedMode: byId('explorerExplodedMode'),
+    explorerEnterApartment: byId('explorerEnterApartment'),
+    explorerRotateFloor: byId('explorerRotateFloor'),
+    explorerReassemble: byId('explorerReassemble'),
+    explorerReturnToFloor: byId('explorerReturnToFloor'),
+    explorerReturnExterior: byId('explorerReturnExterior'),
+    explorerRoomSection: byId('explorerRoomSection'),
+    explorerPlanFloor: byId('explorerPlanFloor'),
+    explorerPlan: byId('explorerPlan'),
+    explorerRoomList: byId('explorerRoomList'),
+    explorerRoomTitle: byId('explorerRoomTitle'),
+    explorerRoomDescription: byId('explorerRoomDescription'),
+    explorerAccuracy: byId('explorerAccuracy'),
+    explorerWalkControls: byId('explorerWalkControls'),
+    explorerModelNotice: byId('explorerModelNotice'),
+    facadeInspectButton: byId('facadeInspectButton'),
+    facadeInspectLabel: byId('facadeInspectLabel'),
+    facadeInfo: byId('facadeInfo'),
+    facadeInfoKicker: byId('facadeInfoKicker'),
+    facadeInfoTitle: byId('facadeInfoTitle'),
+    facadeInfoDescription: byId('facadeInfoDescription'),
+    facadeInfoSide: byId('facadeInfoSide'),
+    facadeInfoFloor: byId('facadeInfoFloor'),
+    facadeInfoConfidence: byId('facadeInfoConfidence'),
+    facadeInfoClose: byId('facadeInfoClose'),
     aboutButton: byId('aboutButton'),
     fullscreenButton: byId('fullscreenButton'),
     fullscreenLabel: byId('fullscreenLabel'),
@@ -59,6 +128,10 @@ export function createUI({
 
   const touch = window.matchMedia('(pointer: coarse)').matches;
   const presetButtons = new Map();
+  const explorerFloorButtons = new Map();
+  const explorerRoomButtons = new Map();
+  const explorerPlanButtons = new Map();
+  let explorerRoomsBuilt = false;
   let currentMode = 'orbit';
   let sheetOpen = false;
   let lastFocused = null;
@@ -77,6 +150,47 @@ export function createUI({
     button.addEventListener('click', () => onPreset(name));
     elements.presetRail.appendChild(button);
     presetButtons.set(name, button);
+  }
+
+  // Floor numbers are view controls, not claims about official storey naming.
+  for (let floor = BUILDING.levels; floor >= 1; floor -= 1) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'explorer-floor-button';
+    button.textContent = String(floor);
+    button.dataset.floor = String(floor);
+    button.setAttribute('aria-label', `Select modeled floor ${floor}`);
+    button.setAttribute('aria-pressed', 'false');
+    button.addEventListener('click', () => onExplorerFloor(floor));
+    elements.explorerFloorRail.appendChild(button);
+    explorerFloorButtons.set(floor, button);
+  }
+
+  function buildRoomControls(rooms = []) {
+    if (explorerRoomsBuilt || !Array.isArray(rooms) || !rooms.length) return;
+    for (const room of rooms) {
+      const planButton = document.createElement('button');
+      planButton.type = 'button';
+      planButton.className = `explorer-plan-room plan-room-${room.id}`;
+      planButton.textContent = room.shortLabel || room.label;
+      planButton.dataset.roomId = room.id;
+      planButton.setAttribute('aria-label', `Select ${room.label} on the floor plan`);
+      planButton.setAttribute('aria-pressed', 'false');
+      planButton.addEventListener('click', () => onExplorerRoom(room.id));
+      elements.explorerPlan.appendChild(planButton);
+      explorerPlanButtons.set(room.id, planButton);
+
+      const listButton = document.createElement('button');
+      listButton.type = 'button';
+      listButton.className = 'explorer-room-button';
+      listButton.textContent = room.label;
+      listButton.dataset.roomId = room.id;
+      listButton.setAttribute('aria-pressed', 'false');
+      listButton.addEventListener('click', () => onExplorerRoom(room.id));
+      elements.explorerRoomList.appendChild(listButton);
+      explorerRoomButtons.set(room.id, listButton);
+    }
+    explorerRoomsBuilt = true;
   }
 
   function setMode(mode) {
@@ -161,7 +275,7 @@ export function createUI({
     elements.intro.style.setProperty('--intro-duration', `${duration}ms`);
     elements.skipIntro.tabIndex = 0;
     // Restart the CSS progress animation on every replay.
-    elements.intro.classList.remove('is-visible', 'is-running');
+    elements.intro.classList.remove('is-visible', 'is-running', 'is-reduced', 'is-motion');
     void elements.intro.offsetWidth;
     elements.intro.classList.add('is-visible', 'is-running', reducedMotion ? 'is-reduced' : 'is-motion');
     document.body.classList.add('intro-active');
@@ -176,7 +290,7 @@ export function createUI({
     document.body.classList.remove('intro-active');
     introTimer = window.setTimeout(() => {
       elements.intro.hidden = true;
-      elements.intro.classList.remove('is-leaving', 'is-running');
+      elements.intro.classList.remove('is-leaving', 'is-running', 'is-reduced', 'is-motion');
     }, 520);
   }
 
@@ -260,6 +374,38 @@ export function createUI({
   elements.modeOrbit.addEventListener('click', () => onMode('orbit'));
   elements.modeFree.addEventListener('click', () => onMode('free'));
   elements.replayIntro.addEventListener('click', () => onReplayIntro());
+  elements.guidedTourButton.addEventListener('click', () => onGuidedTourToggle());
+  elements.tourPauseButton.addEventListener('click', () => onGuidedPauseToggle());
+  elements.tourNextButton.addEventListener('click', () => onGuidedNext());
+  elements.tourSkipButton.addEventListener('click', () => onGuidedSkip());
+  elements.blueprintToggle.addEventListener('click', () => onBlueprintToggle());
+  elements.exploreFloorsButton.addEventListener('click', () => onExplorerToggle());
+  elements.explorerCloseButton.addEventListener('click', () => onExplorerClose());
+  elements.explorerReturnExterior.addEventListener('click', () => onExplorerClose());
+  elements.explorerExteriorMode.addEventListener('click', () => onExplorerMode('exterior'));
+  elements.explorerCutawayMode.addEventListener('click', () => onExplorerMode('cutaway'));
+  elements.explorerXrayMode.addEventListener('click', () => onExplorerMode('xray'));
+  elements.explorerCutDepth.addEventListener('input', () => onExplorerCutDepth(Number(elements.explorerCutDepth.value)));
+  elements.explorerFloorMode.addEventListener('click', () => onExplorerMode('floor'));
+  elements.explorerExplodedMode.addEventListener('click', () => onExplorerMode('exploded'));
+  elements.explorerEnterApartment.addEventListener('click', () => onExplorerEnter());
+  elements.explorerReturnToFloor.addEventListener('click', () => onExplorerReturnFloor());
+  elements.explorerReassemble.addEventListener('click', () => onExplorerReassemble());
+  elements.explorerRotateFloor.addEventListener('click', () => onExplorerRotate());
+  elements.explorerWalkControls.querySelectorAll('[data-walk]').forEach((button) => {
+    const direction = button.dataset.walk;
+    const release = () => onExplorerWalkDirection(direction, false);
+    button.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      try { button.setPointerCapture(event.pointerId); } catch { /* optional */ }
+      onExplorerWalkDirection(direction, true);
+    });
+    button.addEventListener('pointerup', release);
+    button.addEventListener('pointercancel', release);
+    button.addEventListener('lostpointercapture', release);
+  });
+  elements.facadeInspectButton.addEventListener('click', () => onInspectToggle());
+  elements.facadeInfoClose.addEventListener('click', () => onClearInspection());
   elements.aboutButton.addEventListener('click', () => openSheet());
   elements.aboutClose.addEventListener('click', () => closeSheet());
   elements.aboutPanel.querySelector('[data-close-sheet]')?.addEventListener('click', () => closeSheet());
@@ -292,6 +438,118 @@ export function createUI({
     },
     setMode,
     setPresetActive,
+    setGuidedTourState(state = {}) {
+      const active = Boolean(state.active);
+      const paused = Boolean(state.paused);
+      elements.guidedTourButton.setAttribute('aria-pressed', String(active));
+      elements.guidedTourButton.classList.toggle('is-tour-active', active);
+      elements.guidedTourLabel.textContent = active
+        ? `Tour ${state.step}/${state.total}`
+        : 'Guided tour';
+      elements.guidedTourButton.title = active
+        ? `${state.label || 'Guided tour'} — click to stop`
+        : 'Play the guided exterior tour';
+      elements.directorPanel.hidden = !active;
+      if (active) {
+        elements.tourStepTitle.textContent = state.label || 'Guided exterior tour';
+        elements.tourStepCount.textContent = `${String(state.step || 1).padStart(2, '0')} / ${String(state.total || 9).padStart(2, '0')}`;
+        elements.tourProgress.style.width = `${Math.max(0, Math.min(1, (state.step || 1) / (state.total || 9))) * 100}%`;
+      }
+      elements.tourPauseButton.setAttribute('aria-pressed', String(paused));
+      elements.tourPauseLabel.textContent = paused ? 'Resume' : 'Pause';
+      elements.tourPauseButton.title = paused ? 'Resume the guided tour' : 'Pause tour progression';
+    },
+    setExplorerState(state = {}) {
+      buildRoomControls(state.rooms || []);
+      const active = Boolean(state.active);
+      const floor = Number(state.selectedFloor) || 1;
+      const mode = state.mode || 'exterior';
+      const modeLabels = {
+        exterior: 'Exterior highlight', xray: 'X-ray facade', cutaway: 'Architectural cutaway',
+        exploded: 'Exploded tower', floor: 'Isolated floor', interior: 'Inside apartment'
+      };
+      elements.buildingExplorerPanel.hidden = !active;
+      elements.exploreFloorsButton.setAttribute('aria-pressed', String(active));
+      elements.exploreFloorsButton.classList.toggle('is-explorer-active', active);
+      elements.exploreFloorsLabel.textContent = active ? 'IRIS Inside' : 'Explore floors';
+      document.body.classList.toggle('is-building-explorer', active);
+      elements.explorerSelectedFloor.textContent = `Floor ${floor}`;
+      elements.explorerPlanFloor.textContent = `FLOOR ${floor}`;
+      elements.explorerModeLabel.textContent = modeLabels[mode] || mode;
+      for (const [number, button] of explorerFloorButtons) {
+        const selected = number === floor;
+        button.classList.toggle('is-active', selected);
+        button.setAttribute('aria-pressed', String(selected));
+      }
+      const modeButtons = [elements.explorerExteriorMode, elements.explorerCutawayMode, elements.explorerXrayMode, elements.explorerFloorMode, elements.explorerExplodedMode];
+      for (const button of modeButtons) {
+        const selected = button.dataset.explorerMode === mode;
+        button.classList.toggle('is-active', selected);
+        button.setAttribute('aria-pressed', String(selected));
+      }
+      elements.explorerEnterApartment.textContent = state.walking ? 'Inside apartment' : 'Enter apartment';
+      elements.explorerEnterApartment.disabled = mode === 'interior' && Boolean(state.walking);
+      elements.explorerRotateFloor.setAttribute('aria-pressed', String(Boolean(state.rotateEnabled)));
+      elements.explorerRotateFloor.classList.toggle('is-active', Boolean(state.rotateEnabled));
+      elements.explorerRotateFloor.textContent = state.rotateEnabled ? 'Drag to rotate · On' : 'Rotate floor';
+      elements.explorerRotateFloor.disabled = Boolean(state.walking) || !['floor', 'xray', 'cutaway', 'exploded'].includes(mode);
+      elements.explorerReassemble.hidden = mode !== 'exploded';
+      elements.explorerReturnToFloor.hidden = mode !== 'interior';
+      elements.explorerCutControl.hidden = mode !== 'cutaway';
+      elements.explorerCutDepth.value = String(state.cutDepth ?? 6);
+      elements.explorerCutDepthLabel.textContent = `${Number(state.cutDistanceFromFront ?? (HALF_D - Number(state.cutDepth ?? 6))).toFixed(1)} m from front`;
+      elements.explorerRoomSection.hidden = !['xray', 'cutaway', 'floor', 'interior'].includes(mode);
+      elements.explorerWalkControls.hidden = !Boolean(state.walking);
+      elements.explorerModelNotice.textContent = state.proxyFloorsOnly
+        ? 'This model has no floor-specific facade groups. Exploded view uses inferred floor datum proxies; the sample interior remains conceptual.'
+        : 'The selected floor uses floor-aware exterior geometry. Apartment rooms are illustrative; no approved interior drawing is present in the repository.';
+      elements.explorerAccuracy.textContent = 'Illustrative room concept · not an approved apartment plan';
+      for (const [id, button] of explorerPlanButtons) {
+        const selected = id === state.selectedRoom;
+        button.classList.toggle('is-selected', selected);
+        button.setAttribute('aria-pressed', String(selected));
+      }
+      for (const [id, button] of explorerRoomButtons) {
+        const selected = id === state.selectedRoom;
+        button.classList.toggle('is-selected', selected);
+        button.setAttribute('aria-pressed', String(selected));
+      }
+      if (state.roomTitle) elements.explorerRoomTitle.textContent = state.roomTitle;
+      if (state.roomDescription) elements.explorerRoomDescription.textContent = state.roomDescription;
+    },
+    setBlueprintState(active) {
+      const enabled = Boolean(active);
+      elements.blueprintToggle.setAttribute('aria-pressed', String(enabled));
+      elements.blueprintToggle.classList.toggle('is-blueprint-active', enabled);
+      elements.blueprintToggleLabel.textContent = enabled ? 'Reality' : 'Blueprint';
+      elements.blueprintToggle.title = enabled
+        ? 'Return to the fully shaded 3D exterior'
+        : 'Reveal the building\'s architectural edge geometry';
+    },
+    setInspectionState(active) {
+      const enabled = Boolean(active);
+      elements.facadeInspectButton.setAttribute('aria-pressed', String(enabled));
+      elements.facadeInspectButton.classList.toggle('is-inspection-active', enabled);
+      elements.facadeInspectLabel.textContent = enabled ? 'Inspect on' : 'Inspect';
+      elements.facadeInspectButton.title = enabled
+        ? 'Click a building surface to inspect it; select again to stop'
+        : 'Turn on facade inspection';
+      if (!enabled) elements.facadeInfo.hidden = true;
+    },
+    showFacadeInfo(info) {
+      if (!info) return;
+      elements.facadeInfoKicker.textContent = info.confidence || 'CONCEPTUAL EXTERIOR';
+      elements.facadeInfoTitle.textContent = info.title || 'Exterior feature';
+      elements.facadeInfoDescription.textContent = info.description || '';
+      elements.facadeInfoSide.textContent = info.side || 'Exterior';
+      elements.facadeInfoFloor.textContent = info.floor || '';
+      elements.facadeInfoConfidence.textContent = 'Conceptual / inferred geometry · not an approved architectural detail';
+      elements.facadeInfo.hidden = false;
+      announce(`${info.title || 'Exterior feature'} selected. ${info.side || ''}. ${info.floor || ''}.`);
+    },
+    clearFacadeInfo() {
+      elements.facadeInfo.hidden = true;
+    },
     setPointerLocked,
     setLoading,
     hideLoading,

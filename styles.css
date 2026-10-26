@@ -1707,3 +1707,681 @@ body[data-mode="free"] .hud-hint {
     animation: none !important;
   }
 }
+
+
+/* ------------------------------------------------------------------ */
+/* Guided exploration and live atmosphere controls                    */
+/* ------------------------------------------------------------------ */
+
+.guided-tour-button.is-tour-active {
+  color: var(--ivory);
+  border-color: rgba(211, 176, 124, 0.42);
+  background: rgba(133, 93, 47, 0.28);
+}
+
+.guided-tour-button.is-tour-active svg {
+  color: var(--gold);
+}
+
+.light-tool {
+  position: absolute;
+  z-index: 18;
+  top: calc(78px + var(--safe-top));
+  right: clamp(18px, 3.2vw, 44px);
+  width: min(286px, calc(100vw - 36px));
+  color: var(--ivory-soft);
+  background: rgba(9, 16, 21, 0.82);
+  border: 1px solid rgba(244, 238, 224, 0.15);
+  border-radius: 13px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  font-size: 9px;
+}
+
+.light-tool summary {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  list-style: none;
+  cursor: pointer;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.light-tool summary::-webkit-details-marker {
+  display: none;
+}
+
+.light-tool summary svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 1.35;
+  stroke-linecap: round;
+}
+
+.light-tool summary strong {
+  margin-left: auto;
+  color: var(--gold);
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.light-tool[open] summary {
+  border-bottom: 1px solid rgba(244, 238, 224, 0.1);
+}
+
+.light-tool-body {
+  padding: 12px 13px 13px;
+}
+
+.light-tool-body label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--ivory);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.light-tool-body input[type="range"] {
+  width: 100%;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--gold);
+  cursor: ew-resize;
+  touch-action: pan-y;
+}
+
+.light-time-endpoints {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 3px;
+  color: var(--muted-2);
+  font-size: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.light-tool-note,
+.light-tool-body p {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.55;
+  letter-spacing: 0.015em;
+}
+
+@media (max-width: 760px) {
+  .top-actions {
+    gap: 5px;
+  }
+
+  .top-actions .guided-tour-button {
+    width: 36px;
+    padding: 0;
+  }
+
+  .top-actions .guided-tour-button span {
+    display: none;
+  }
+
+  .light-tool {
+    top: calc(75px + var(--safe-top));
+    right: 12px;
+    width: min(224px, calc(100vw - 24px));
+  }
+
+  .light-tool summary {
+    min-height: 36px;
+    gap: 6px;
+    padding: 0 9px;
+    font-size: 8px;
+  }
+
+  .light-tool summary strong {
+    font-size: 7.5px;
+  }
+
+  .light-tool-body {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 420px) {
+  .top-actions .guided-tour-button {
+    width: 32px;
+    height: 34px;
+  }
+
+  .light-tool {
+    top: calc(70px + var(--safe-top));
+    right: 10px;
+    width: min(210px, calc(100vw - 20px));
+  }
+}
+
+
+/* ------------------------------------------------------------------ */
+/* Facade inspection annotations                                       */
+/* ------------------------------------------------------------------ */
+
+.facade-inspect-button.is-inspection-active {
+  color: var(--ivory);
+  border-color: rgba(211, 176, 124, 0.45);
+  background: rgba(133, 93, 47, 0.27);
+}
+
+.facade-inspect-button.is-inspection-active svg {
+  color: var(--gold);
+}
+
+.facade-info {
+  position: absolute;
+  z-index: 19;
+  left: clamp(18px, 3.2vw, 44px);
+  bottom: calc(115px + var(--safe-bottom));
+  width: min(320px, calc(100vw - 36px));
+  padding: 15px 16px 13px;
+  color: var(--ivory-soft);
+  background: rgba(9, 16, 21, 0.87);
+  border: 1px solid rgba(211, 176, 124, 0.28);
+  border-radius: 15px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  pointer-events: auto;
+}
+
+.facade-info-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.facade-info-head .eyebrow {
+  color: var(--gold);
+  font-size: 8px;
+  letter-spacing: 0.2em;
+}
+
+.facade-info-close {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ivory-soft);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.facade-info h3 {
+  margin: 8px 0 7px;
+  color: var(--ivory);
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 400;
+  line-height: 1.18;
+}
+
+.facade-info > p:not(.facade-info-confidence) {
+  margin: 0;
+  color: var(--ivory-soft);
+  font-size: 11px;
+  line-height: 1.62;
+}
+
+.facade-info-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.facade-info-meta span {
+  padding: 5px 7px;
+  color: var(--gold);
+  background: rgba(211, 176, 124, 0.08);
+  border: 1px solid rgba(211, 176, 124, 0.16);
+  border-radius: 999px;
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.facade-info .facade-info-confidence {
+  margin: 10px 0 0;
+  color: var(--muted-2);
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+@media (max-width: 760px) {
+  .top-actions .facade-inspect-button {
+    width: 36px;
+    padding: 0;
+  }
+
+  .top-actions .facade-inspect-button span {
+    display: none;
+  }
+
+  .facade-info {
+    left: 10px;
+    bottom: calc(128px + var(--safe-bottom));
+    width: min(290px, calc(100vw - 20px));
+    padding: 12px 13px 11px;
+  }
+
+  .facade-info h3 {
+    font-size: 17px;
+  }
+
+  .facade-info > p:not(.facade-info-confidence) {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 420px) {
+  .top-actions .facade-inspect-button {
+    width: 32px;
+    height: 34px;
+  }
+
+  .facade-info {
+    bottom: calc(120px + var(--safe-bottom));
+  }
+}
+
+
+.render-toggle {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 11px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--ivory-soft);
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(244, 238, 224, 0.12);
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.render-toggle:hover {
+  background: rgba(255, 255, 255, 0.065);
+  border-color: rgba(211, 176, 124, 0.28);
+}
+
+.render-toggle-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.render-toggle-copy strong {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.render-toggle-copy small {
+  color: var(--muted);
+  font-size: 8px;
+  line-height: 1.3;
+}
+
+.render-toggle-state {
+  min-width: 31px;
+  padding: 4px 6px;
+  color: var(--gold);
+  background: rgba(211, 176, 124, 0.1);
+  border: 1px solid rgba(211, 176, 124, 0.2);
+  border-radius: 999px;
+  font-size: 8px;
+  text-align: center;
+}
+
+.render-toggle[aria-pressed="false"] .render-toggle-state {
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.035);
+  border-color: var(--line);
+}
+
+
+/* ------------------------------------------------------------------ */
+/* Optional WebXR miniature preview                                    */
+/* ------------------------------------------------------------------ */
+
+.ar-preview-button {
+  border-color: rgba(211, 176, 124, 0.24);
+}
+
+.ar-preview-button svg {
+  color: var(--gold);
+}
+
+.ar-preview-button[aria-pressed="true"] {
+  color: var(--ivory);
+  border-color: rgba(211, 176, 124, 0.55);
+  background: rgba(133, 93, 47, 0.32);
+}
+
+@media (max-width: 760px) {
+  .top-actions .ar-preview-button {
+    width: 36px;
+    padding: 0;
+  }
+
+  .top-actions .ar-preview-button span {
+    display: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .top-actions .ar-preview-button {
+    width: 32px;
+    height: 34px;
+  }
+}
+
+
+/* When the headset/phone owns the view, keep only branding and the AR exit
+   action visible inside the optional WebXR DOM overlay. */
+body.ar-active .hud,
+body.ar-active .concept-note,
+body.ar-active .light-tool,
+body.ar-active #replayIntro,
+body.ar-active #guidedTourButton,
+body.ar-active #facadeInspectButton,
+body.ar-active #blueprintToggle,
+body.ar-active #aboutButton,
+body.ar-active #projectSiteLink,
+body.ar-active #fullscreenButton {
+  display: none !important;
+}
+
+body.ar-active .topbar {
+  padding-top: calc(12px + var(--safe-top));
+}
+
+body.ar-active .top-actions .ar-preview-button {
+  width: auto;
+  padding: 0 14px;
+  background: rgba(9, 16, 21, 0.9);
+  border-color: rgba(211, 176, 124, 0.48);
+}
+
+body.ar-active .top-actions .ar-preview-button span {
+  display: inline;
+}
+
+
+/* ------------------------------------------------------------------ */
+/* Director's Cut — guided route controls                              */
+/* ------------------------------------------------------------------ */
+.director-panel {
+  position: absolute; z-index: 21; right: clamp(18px, 3.2vw, 44px);
+  bottom: calc(112px + var(--safe-bottom)); width: min(340px, calc(100vw - 36px));
+  padding: 14px 15px 13px; color: var(--ivory);
+  background: rgba(9, 16, 21, 0.88); border: 1px solid rgba(211, 176, 124, 0.28);
+  border-radius: 15px; box-shadow: 0 18px 48px rgba(0,0,0,0.32);
+  backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); pointer-events: auto;
+  animation: director-panel-in 320ms cubic-bezier(0.16,1,0.3,1) both;
+}
+.director-panel-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.director-panel-heading > div { display:flex; min-width:0; flex-direction:column; gap:5px; }
+.director-kicker { color:var(--gold); font-size:7.5px; letter-spacing:0.24em; }
+.director-panel-heading strong { max-width:245px; font-family:var(--font-display); font-size:18px; font-weight:400; line-height:1.18; }
+.director-step-count { flex:none; padding-top:2px; color:var(--muted); font-size:8px; letter-spacing:0.12em; font-variant-numeric:tabular-nums; }
+.director-progress { width:100%; height:2px; margin:12px 0 11px; overflow:hidden; background:rgba(242,238,227,0.12); }
+.director-progress span { display:block; width:0; height:100%; background:linear-gradient(90deg,var(--gold-deep),var(--gold)); box-shadow:0 0 12px rgba(211,176,124,0.45); transition:width 380ms ease; }
+.director-controls { display:flex; gap:6px; }
+.director-controls button { flex:1; min-width:0; min-height:34px; padding:0 8px; border:1px solid rgba(244,238,224,0.14); border-radius:9px; background:rgba(255,255,255,0.035); color:var(--ivory-soft); font-size:8px; letter-spacing:0.04em; cursor:pointer; transition:background 180ms ease,border-color 180ms ease,color 180ms ease; }
+.director-controls button:hover,.director-controls button[aria-pressed="true"] { color:var(--ivory); border-color:rgba(211,176,124,0.42); background:rgba(211,176,124,0.1); }
+@keyframes director-panel-in { from {opacity:0;transform:translateY(8px)} to {opacity:1;transform:translateY(0)} }
+
+/* Blueprint is a view of the same scene geometry, never a static image. */
+.blueprint-button.is-blueprint-active { color:var(--ivory); border-color:rgba(125,220,235,0.48); background:rgba(38,107,126,0.28); }
+.blueprint-button.is-blueprint-active svg { color:#9de3ed; }
+body.is-blueprint .scene-vignette {
+  background:linear-gradient(180deg,rgba(5,13,24,0.42),rgba(5,13,24,0.04) 28%,transparent 44%),
+    linear-gradient(0deg,rgba(5,13,24,0.56),transparent 50%),
+    radial-gradient(120% 100% at 50% 45%,rgba(10,34,52,0.02) 35%,rgba(5,20,34,0.42) 100%);
+}
+body.is-blueprint .app-shell::before {
+  content:""; position:absolute; z-index:4; inset:0; pointer-events:none; opacity:0.20;
+  background-image:linear-gradient(rgba(93,186,207,0.20) 1px,transparent 1px),linear-gradient(90deg,rgba(93,186,207,0.20) 1px,transparent 1px);
+  background-size:44px 44px; mask-image:linear-gradient(180deg,rgba(0,0,0,0.95),rgba(0,0,0,0.12));
+}
+body.is-blueprint .concept-note { color:rgba(157,227,237,0.68); }
+body.is-blueprint .concept-line { background:#9de3ed; box-shadow:0 0 9px rgba(157,227,237,0.5); }
+
+/* The opening signature uses restrained, staggered reveal motion. */
+.intro.is-running .intro-rule { transform-origin:left center; animation:signature-rule 1500ms cubic-bezier(0.16,1,0.3,1) 350ms both; }
+.intro.is-running .intro-title span { animation:signature-title 1100ms cubic-bezier(0.16,1,0.3,1) 120ms both; }
+.intro.is-running .intro-title em { animation:signature-title 1100ms cubic-bezier(0.16,1,0.3,1) 290ms both; }
+@keyframes signature-rule { from {opacity:0.15;transform:scaleX(0.05)} to {opacity:1;transform:scaleX(1)} }
+@keyframes signature-title { from {opacity:0;transform:translateY(14px);filter:blur(5px)} to {opacity:1;transform:translateY(0);filter:blur(0)} }
+
+@media (max-width:760px) {
+  .top-actions .blueprint-button { width:36px; padding:0; }
+  .top-actions .blueprint-button span { display:none; }
+  .director-panel { right:10px; bottom:calc(146px + var(--safe-bottom)); width:min(310px,calc(100vw - 20px)); padding:12px; }
+  .director-panel-heading strong { font-size:16px; }
+  .director-controls button { min-height:32px; padding:0 6px; font-size:7.5px; }
+}
+@media (max-width:420px) {
+  .top-actions .blueprint-button { width:32px; height:34px; }
+  .director-panel { bottom:calc(137px + var(--safe-bottom)); }
+}
+@media (prefers-reduced-motion:reduce) {
+  .director-panel,.intro.is-running .intro-rule,.intro.is-running .intro-title span,.intro.is-running .intro-title em { animation:none !important; }
+  .director-progress span { transition:none; }
+}
+
+
+/* ------------------------------------------------------------------ */
+/* IRIS Inside — floor selector, cutaway, room plan and walk-through   */
+/* ------------------------------------------------------------------ */
+
+.explore-floors-button.is-explorer-active {
+  color: var(--ivory);
+  border-color: rgba(211,176,124,0.5);
+  background: rgba(133,93,47,0.26);
+}
+.explore-floors-button.is-explorer-active svg { color: var(--gold); }
+
+.building-explorer-panel {
+  position: absolute;
+  z-index: 28;
+  top: calc(94px + var(--safe-top));
+  right: clamp(14px, 2.6vw, 36px);
+  bottom: calc(104px + var(--safe-bottom));
+  width: min(368px, calc(100vw - 28px));
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 17px;
+  color: var(--ivory);
+  background: rgba(8, 15, 20, 0.91);
+  border: 1px solid rgba(211,176,124,0.32);
+  border-radius: 18px;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.42);
+  backdrop-filter: blur(26px);
+  -webkit-backdrop-filter: blur(26px);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(211,176,124,0.45) transparent;
+  animation: explorer-panel-in 340ms cubic-bezier(0.16,1,0.3,1) both;
+}
+.building-explorer-panel::-webkit-scrollbar { width: 5px; }
+.building-explorer-panel::-webkit-scrollbar-thumb { background: rgba(211,176,124,0.38); border-radius: 99px; }
+@keyframes explorer-panel-in {
+  from { opacity:0; transform:translateY(9px) scale(0.99); }
+  to { opacity:1; transform:translateY(0) scale(1); }
+}
+.explorer-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.explorer-header > div { min-width:0; }
+.explorer-kicker { display:block; color:var(--gold); font-size:7.5px; letter-spacing:0.19em; line-height:1.5; }
+.explorer-header h2 { margin:5px 0 0; color:var(--ivory); font-family:var(--font-display); font-size:25px; font-weight:400; line-height:1.06; }
+.explorer-intro { margin:10px 0 13px; color:var(--muted); font-size:10px; line-height:1.55; }
+.explorer-floor-summary { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:11px 12px; border:1px solid rgba(211,176,124,0.22); border-radius:12px; background:linear-gradient(120deg,rgba(211,176,124,0.1),rgba(255,255,255,0.025)); }
+.explorer-floor-summary > div { display:flex; flex-direction:column; gap:4px; }
+.explorer-floor-summary strong { font-family:var(--font-display); font-weight:400; font-size:20px; line-height:1; }
+.explorer-floor-summary span:not(.explorer-status-dot) { color:var(--muted); font-size:8px; letter-spacing:0.08em; text-transform:uppercase; }
+.explorer-status-dot { width:8px; height:8px; border-radius:50%; background:var(--gold); box-shadow:0 0 14px rgba(211,176,124,0.58); }
+.explorer-floor-rail { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; margin:9px 0 13px; }
+.explorer-floor-button { min-width:0; min-height:31px; padding:3px 0; border:1px solid rgba(244,238,224,0.13); border-radius:8px; background:rgba(255,255,255,0.035); color:var(--ivory-soft); font-size:10px; font-variant-numeric:tabular-nums; cursor:pointer; transition:color 150ms ease,background 150ms ease,border-color 150ms ease,transform 150ms ease; }
+.explorer-floor-button:hover { border-color:rgba(211,176,124,0.4); color:var(--ivory); }
+.explorer-floor-button.is-active { color:#171712; border-color:#d7b67e; background:#d7b67e; box-shadow:0 0 18px rgba(211,176,124,0.15); font-weight:700; }
+.explorer-mode-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
+.explorer-mode-grid button,.explorer-main-actions button,.explorer-secondary-actions button { min-height:35px; border:1px solid rgba(244,238,224,0.14); border-radius:9px; padding:7px 9px; background:rgba(255,255,255,0.035); color:var(--ivory-soft); font:inherit; font-size:9px; letter-spacing:0.035em; cursor:pointer; transition:background 170ms ease,border-color 170ms ease,color 170ms ease; }
+.explorer-mode-grid button:hover,.explorer-main-actions button:hover,.explorer-secondary-actions button:hover { color:var(--ivory); border-color:rgba(211,176,124,0.35); }
+.explorer-mode-grid button.is-active,.explorer-mode-grid button[aria-pressed="true"] { color:var(--ivory); border-color:rgba(211,176,124,0.44); background:rgba(211,176,124,0.12); }
+.explorer-main-actions { display:grid; grid-template-columns:1.45fr 1fr; gap:6px; margin-top:7px; }
+.explorer-main-actions .explorer-primary-button { color:#171712; border-color:#d7b67e; background:linear-gradient(120deg,#d8bb88,#b99158); font-weight:650; }
+.explorer-main-actions .explorer-primary-button:disabled { opacity:0.65; cursor:default; }
+.explorer-main-actions button.is-active,.explorer-main-actions button[aria-pressed="true"] { border-color:#d7b67e; color:var(--gold); background:rgba(211,176,124,0.12); }
+.explorer-secondary-actions { display:flex; flex-wrap:wrap; gap:6px; margin-top:7px; }
+.explorer-secondary-actions button { min-height:29px; padding:6px 9px; font-size:8px; }
+.explorer-secondary-actions #explorerReturnExterior { margin-left:auto; }
+.explorer-room-section { border-top:1px solid rgba(244,238,224,0.12); margin-top:14px; padding-top:14px; }
+.explorer-section-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.explorer-section-heading h3 { margin:3px 0 0; font-family:var(--font-display); font-size:18px; font-weight:400; }
+.explorer-floor-chip { border:1px solid rgba(211,176,124,0.23); border-radius:999px; padding:5px 7px; color:var(--gold); font-size:7px; letter-spacing:0.11em; white-space:nowrap; }
+.explorer-plan-note { margin:8px 0; color:var(--muted); font-size:8px; line-height:1.45; }
+.explorer-plan { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); grid-template-rows:repeat(4,minmax(34px,auto)); gap:4px; padding:6px; background:rgba(242,238,227,0.035); border:1px solid rgba(244,238,224,0.11); border-radius:12px; }
+.explorer-plan-room { min-width:0; min-height:30px; padding:4px; border:1px solid rgba(244,238,224,0.14); border-radius:6px; background:rgba(118,141,134,0.2); color:var(--ivory-soft); font-size:7.5px; line-height:1.25; cursor:pointer; transition:background 160ms ease,border-color 160ms ease,color 160ms ease; }
+.explorer-plan-room:hover,.explorer-plan-room.is-selected { color:var(--ivory); border-color:rgba(211,176,124,0.7); background:rgba(211,176,124,0.28); }
+.plan-room-living { grid-column:1/3; grid-row:1/3; }
+.plan-room-dining { grid-column:3/4; grid-row:1/3; background:rgba(181,154,115,0.2); }
+.plan-room-kitchen { grid-column:4/5; grid-row:1/3; background:rgba(122,143,160,0.22); }
+.plan-room-bedroom { grid-column:1/3; grid-row:3/4; background:rgba(140,126,156,0.2); }
+.plan-room-bathroom { grid-column:3/5; grid-row:3/4; background:rgba(123,155,155,0.2); }
+.plan-room-balcony { grid-column:1/5; grid-row:4/5; background:rgba(194,154,110,0.2); }
+.explorer-room-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px; margin-top:7px; }
+.explorer-room-button { min-height:29px; padding:6px 8px; text-align:left; color:var(--ivory-soft); background:transparent; border:1px solid rgba(244,238,224,0.1); border-radius:8px; font:inherit; font-size:8.5px; cursor:pointer; }
+.explorer-room-button:hover,.explorer-room-button.is-selected { border-color:rgba(211,176,124,0.45); color:var(--gold); background:rgba(211,176,124,0.08); }
+.explorer-room-detail { margin-top:8px; padding:11px; border-radius:11px; background:rgba(255,255,255,0.035); border:1px solid rgba(244,238,224,0.1); }
+.explorer-room-detail h4 { margin:5px 0 5px; color:var(--ivory); font-family:var(--font-display); font-size:17px; font-weight:400; }
+.explorer-room-detail p { margin:0; color:var(--ivory-soft); font-size:9px; line-height:1.55; }
+.explorer-room-detail .explorer-accuracy { margin-top:7px; color:var(--muted-2); font-size:7.5px; }
+.explorer-walk-controls { display:grid; grid-template-columns:auto 1fr; align-items:center; gap:10px; margin-top:10px; padding:10px; border:1px solid rgba(211,176,124,0.18); border-radius:11px; background:rgba(211,176,124,0.04); }
+.explorer-walk-pad { display:grid; grid-template-columns:repeat(3,32px); grid-template-rows:repeat(2,30px); gap:3px; justify-items:center; }
+.explorer-walk-pad button { width:30px; height:28px; border:1px solid rgba(244,238,224,0.16); border-radius:7px; background:rgba(255,255,255,0.055); color:var(--gold); touch-action:none; cursor:pointer; }
+.explorer-walk-pad button[data-walk="forward"] { grid-column:2; grid-row:1; }
+.explorer-walk-pad button[data-walk="left"] { grid-column:1; grid-row:2; }
+.explorer-walk-pad button[data-walk="backward"] { grid-column:2; grid-row:2; }
+.explorer-walk-pad button[data-walk="right"] { grid-column:3; grid-row:2; }
+.explorer-walk-controls p { margin:0; color:var(--muted); font-size:8px; line-height:1.5; }
+.explorer-model-notice { margin:11px 0 0; padding-top:10px; border-top:1px solid rgba(244,238,224,0.1); color:var(--muted-2); font-size:8px; line-height:1.5; }
+
+@media (max-width:760px) {
+  .top-actions .explore-floors-button { width:36px; padding:0; }
+  .top-actions .explore-floors-button span { display:none; }
+  .building-explorer-panel { top:calc(112px + var(--safe-top)); left:10px; right:10px; bottom:calc(100px + var(--safe-bottom)); width:auto; max-height:none; padding:13px; border-radius:15px; }
+  .explorer-header h2 { font-size:22px; }
+  .explorer-floor-rail { grid-template-columns:repeat(7,minmax(0,1fr)); gap:4px; }
+  .explorer-floor-button { min-height:28px; }
+  .explorer-plan { grid-template-rows:repeat(4,minmax(30px,auto)); }
+  .explorer-walk-controls { grid-template-columns:auto 1fr; }
+}
+@media (max-width:420px) {
+  .top-actions .explore-floors-button { width:32px; height:34px; }
+  .building-explorer-panel { top:calc(106px + var(--safe-top)); left:7px; right:7px; bottom:calc(92px + var(--safe-bottom)); padding:10px; }
+  .explorer-header h2 { font-size:20px; }
+  .explorer-plan-room { font-size:7px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .building-explorer-panel { animation:none; }
+}
+
+
+/* IRIS Inside takes temporary ownership of the scene; keep only its entry
+   control and the exterior atmosphere tool visible above the explorer panel. */
+body.is-building-explorer .hud,
+body.is-building-explorer .concept-note,
+body.is-building-explorer #replayIntro,
+body.is-building-explorer #aboutButton,
+body.is-building-explorer #projectSiteLink,
+body.is-building-explorer #guidedTourButton,
+body.is-building-explorer #facadeInspectButton,
+body.is-building-explorer #blueprintToggle,
+body.is-building-explorer #arPreviewButton,
+body.is-building-explorer #fullscreenButton {
+  display: none !important;
+}
+body.is-building-explorer .topbar {
+  align-items: center;
+  padding-top: calc(12px + var(--safe-top));
+}
+body.is-building-explorer .top-actions .explore-floors-button {
+  width: auto;
+  min-height: 34px;
+  padding: 0 13px;
+  border-color: rgba(211,176,124,0.52);
+  background: rgba(133,93,47,0.24);
+}
+body.is-building-explorer .top-actions .explore-floors-button span {
+  display: inline;
+}
+@media (max-width:760px) {
+  body.is-building-explorer .top-actions .explore-floors-button { width:auto; padding:0 10px; }
+  body.is-building-explorer .top-actions .explore-floors-button span { display:inline; }
+}
+@media (max-width:420px) {
+  body.is-building-explorer .top-actions .explore-floors-button { width:auto; height:32px; min-height:32px; font-size:8px; }
+}
+
+
+.explorer-cut-control {
+  margin: 8px 0 10px;
+  padding: 10px 11px 9px;
+  border: 1px solid rgba(211,176,124,0.2);
+  border-radius: 10px;
+  background: rgba(211,176,124,0.045);
+}
+.explorer-cut-control label {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  color:var(--ivory-soft);
+  font-size:8.5px;
+}
+.explorer-cut-control label strong {
+  color:var(--gold);
+  font-size:8px;
+  font-weight:500;
+  white-space:nowrap;
+}
+.explorer-cut-control input[type="range"] {
+  display:block;
+  width:100%;
+  margin:10px 0 5px;
+  accent-color:var(--gold);
+  cursor:ew-resize;
+}
+.explorer-cut-control p {
+  margin:0;
+  color:var(--muted-2);
+  font-size:7.5px;
+  line-height:1.45;
+}
