@@ -111,19 +111,33 @@ const assert = (condition, message) => {
     await waitForExplorerMode('xray');
     assert(await page.locator('#explorerFloorRail').isVisible(), 'architectural layer option opens floor and layer controls');
     assert(await page.locator('[data-explorer-layer]').count() === 7, 'architectural layer explorer exposes seven layer groups');
-    await page.locator('[data-explorer-layer="glazing"]').click();
-    await page.waitForFunction(() => {
-      const explorer = window.__IRIS_APP__?.buildingExplorer;
-      const records = explorer?.layerObjects?.get('glazing');
-      return explorer?.layerVisibility?.glazing === false && records?.length > 0 && records.every(({ object }) => object.visible === false);
-    }, null, { timeout: 5000 });
-    assert(await page.locator('[data-explorer-layer="glazing"]').getAttribute('aria-pressed') === 'false', 'glazing toggle hides the model meshes and updates its button state');
-    await page.locator('[data-explorer-layer="glazing"]').click();
-    await page.waitForFunction(() => {
-      const explorer = window.__IRIS_APP__?.buildingExplorer;
-      const records = explorer?.layerObjects?.get('glazing');
-      return explorer?.layerVisibility?.glazing === true && records?.length > 0 && records.every(({ object, visible }) => object.visible === visible);
-    }, null, { timeout: 5000 });
+    const assertLayerToggle = async (layer) => {
+      const button = page.locator('[data-explorer-layer="' + layer + '"]');
+      await button.click();
+      await page.waitForFunction((key) => {
+        const app = window.__IRIS_APP__;
+        const explorer = app?.buildingExplorer;
+        if (!explorer || explorer.layerVisibility?.[key] !== false) return false;
+        if (key === 'site') return app.site?.group?.visible === false;
+        if (key === 'roof') return explorer.staticChildren.length > 0 && explorer.staticChildren.every(({ object }) => object.visible === false);
+        const records = explorer.layerObjects?.get(key);
+        return records?.length > 0 && records.every(({ object }) => object.visible === false);
+      }, layer, { timeout: 5000 });
+      assert(await button.getAttribute('aria-pressed') === 'false', layer + ' layer toggle hides its model objects');
+      await button.click();
+      await page.waitForFunction((key) => {
+        const app = window.__IRIS_APP__;
+        const explorer = app?.buildingExplorer;
+        if (!explorer || explorer.layerVisibility?.[key] !== true) return false;
+        if (key === 'site') return app.site?.group?.visible === true;
+        if (key === 'roof') return explorer.staticChildren.length > 0 && explorer.staticChildren.every(({ object, visible }) => object.visible === visible);
+        const records = explorer.layerObjects?.get(key);
+        return records?.length > 0 && records.every(({ object, visible }) => object.visible === visible);
+      }, layer, { timeout: 5000 });
+    };
+    for (const layer of ['glazing', 'massing', 'metalwork', 'balustrades', 'roof', 'site']) {
+      await assertLayerToggle(layer);
+    }
     await returnExterior();
 
     await openFeature('journey');
