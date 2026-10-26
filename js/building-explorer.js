@@ -696,13 +696,16 @@ export class BuildingExplorer {
     // material-category switch so one control cannot accidentally re-enable
     // an object hidden by another control.
     const nonFloorObjects = new Set(this.staticChildren.map(({ object }) => object));
+    const modeHidesStatic = ['exploded', 'floor', 'interior'].includes(this.mode);
     for (const { object, visible } of this.staticChildren) {
-      object.visible = visible && this.layerVisibility.roof !== false;
+      object.visible = visible && !modeHidesStatic && this.layerVisibility.roof !== false;
     }
     for (const [layer, records] of this.layerObjects) {
       const enabled = this.layerVisibility[layer] !== false;
       for (const { object, visible } of records) {
-        object.visible = visible && enabled && (!nonFloorObjects.has(object) || this.layerVisibility.roof !== false);
+        const roofAllows = !nonFloorObjects.has(object) || this.layerVisibility.roof !== false;
+        const modeAllows = !nonFloorObjects.has(object) || !modeHidesStatic;
+        object.visible = visible && enabled && roofAllows && modeAllows;
       }
     }
     const showPlates = this.layerVisibility.floorPlates !== false;
@@ -717,8 +720,9 @@ export class BuildingExplorer {
         plate.visible = false;
       }
     }
+    const modeShowsSite = !['exploded', 'floor', 'interior'].includes(this.mode);
     if (this.site?.group) {
-      this.site.group.visible = this.siteInitialVisibility && this.layerVisibility.site !== false;
+      this.site.group.visible = this.siteInitialVisibility && modeShowsSite && this.layerVisibility.site !== false;
     }
   }
 
