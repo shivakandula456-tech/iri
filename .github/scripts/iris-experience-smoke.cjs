@@ -58,8 +58,26 @@ const assert = (condition, message) => {
       page.waitForEvent('popup', { timeout: 10000 }),
       page.locator('[data-feature="lifts"]').click()
     ]);
-    liftPage.on('pageerror', (error) => failures.push('Lift viewer: ' + error.message));
-    await liftPage.waitForFunction(() => Boolean(window.__IRIS_LIFT_VIEWER__?.ready), null, { timeout: 60000 });
+    const liftPageErrors = [];
+    liftPage.on('pageerror', (error) => {
+      liftPageErrors.push('pageerror: ' + error.message);
+      failures.push('Lift viewer: ' + error.message);
+    });
+    liftPage.on('console', (message) => {
+      if (message.type() === 'error') liftPageErrors.push('console: ' + message.text());
+    });
+    assert(liftPage.url().includes('view=lift-placement'), 'lift link navigates to the viewer route');
+    await liftPage.waitForSelector('#irisLiftViewer', { timeout: 15000 });
+    await liftPage.waitForFunction(() => {
+      const root = document.getElementById('irisLiftViewer');
+      return Boolean(window.__IRIS_LIFT_VIEWER__?.ready || root?.dataset.state === 'error');
+    }, null, { timeout: 70000 });
+    const liftViewerState = await liftPage.locator('#irisLiftViewer').getAttribute('data-state');
+    if (liftViewerState !== 'ready') {
+      const status = await liftPage.locator('#irisLiftStatus').textContent().catch(() => '');
+      const detail = await liftPage.locator('#irisLiftDetails').innerText().catch(() => '');
+      throw new Error('Lift viewer state=' + liftViewerState + '; status=' + status + '; details=' + detail + '; browser errors=' + liftPageErrors.join(' | '));
+    }
     assert((await liftPage.title()).includes('Lift Placement Viewer'), 'lift viewer opens in a separate browser tab');
     assert(await liftPage.locator('#irisLiftPlan svg').count() === 1, 'conceptual 2D floor plan renders beside the 3D view');
     await liftPage.locator('#irisLiftFloorSelect').selectOption('3');
