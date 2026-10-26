@@ -315,7 +315,8 @@
       <div id="explorerFloorRail" class="explorer-floor-rail" role="group" aria-label="Select a building floor"></div>
       <div class="explorer-mode-grid" role="group" aria-label="Building viewing mode">
         <button id="explorerExteriorMode" type="button" data-explorer-mode="exterior" aria-pressed="true">Exterior highlight</button>
-        <button id="explorerCutawayMode" type="button" data-explorer-mode="cutaway" aria-pressed="false">Reveal cutaway</button>
+        <button id="explorerVerticalCutawayMode" type="button" data-explorer-mode="vertical" aria-pressed="false">Vertical tower cutaway</button>
+        <button id="explorerCutawayMode" type="button" data-explorer-mode="cutaway" aria-pressed="false">Selected-floor cutaway</button>
         <button id="explorerXrayMode" type="button" data-explorer-mode="xray" aria-pressed="false">X-ray facade</button>
         <button id="explorerFloorMode" type="button" data-explorer-mode="floor" aria-pressed="false">Isolate floor</button>
         <button id="explorerExplodedMode" type="button" data-explorer-mode="exploded" aria-pressed="false">Explode tower</button>
@@ -325,8 +326,8 @@
           <span>Cut plane depth</span>
           <strong id="explorerCutDepthLabel">4.0 m from front</strong>
         </label>
-        <input id="explorerCutDepth" type="range" min="0.2" max="9.8" step="0.2" value="6" aria-label="Move the selected-floor cut plane through the building">
-        <p>Drag to reveal more or less of the selected floor. Position is an estimated model coordinate, not a surveyed measurement.</p>
+        <input id="explorerCutDepth" type="range" min="0.2" max="9.8" step="0.2" value="6" aria-label="Move the cut plane through the building">
+        <p>Drag to reveal more or less of the building or selected floor. Position is an estimated model coordinate, not a surveyed measurement.</p>
       </div>
       <div class="explorer-main-actions">
         <button id="explorerEnterApartment" type="button" class="explorer-primary-button">Enter apartment</button>
