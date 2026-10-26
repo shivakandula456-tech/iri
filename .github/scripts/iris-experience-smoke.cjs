@@ -111,6 +111,20 @@ const assert = (condition, message) => {
     await waitForExplorerMode('xray');
     assert(await page.locator('#explorerFloorRail').isVisible(), 'architectural layer option opens floor and layer controls');
     assert(await page.locator('[data-explorer-layer]').count() === 7, 'architectural layer explorer exposes seven layer groups');
+    await page.locator('#explorerExplodedMode').click();
+    await waitForExplorerMode('exploded');
+    await page.waitForFunction(() => {
+      const explorer = window.__IRIS_APP__?.buildingExplorer;
+      return explorer && [...explorer.floorGroups.entries()].filter(([key]) => typeof key === 'number').every(([floor, group]) => group.position.y === (floor - explorer.selectedFloor) * 1.38);
+    }, null, { timeout: 5000 });
+    assert(true, 'exploded tower separates the floor groups and floor plates');
+    await page.locator('#explorerReassemble').click();
+    await waitForExplorerMode('exterior');
+    await page.waitForFunction(() => {
+      const explorer = window.__IRIS_APP__?.buildingExplorer;
+      return explorer && [...explorer.floorGroups.values()].every((group) => group.position.y === 0 && group.rotation.y === 0);
+    }, null, { timeout: 5000 });
+    assert(true, 'reassemble restores tower floor groups and rotations');
     const assertLayerToggle = async (layer) => {
       const button = page.locator('[data-explorer-layer="' + layer + '"]');
       await button.click();
