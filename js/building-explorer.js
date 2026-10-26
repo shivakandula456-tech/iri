@@ -468,9 +468,12 @@ export class BuildingExplorer {
   enterApartment() {
     if (!this.active) return;
     this.mode = 'interior';
-    this.walking = true;
     this.rotateEnabled = false;
     this._applyVisualMode();
+    // _applyVisualMode() calls _stopWalk() while resetting the previous mode.
+    // Re-enter walking mode after that reset so the interior state is correct
+    // during the camera fly-in as well as after it completes.
+    this.walking = true;
     this.interiorRoot.position.y = this._floorBottom();
     this._flyTo(
       new THREE.Vector3(0, this._floorBottom() + 1.62, 5.5),
