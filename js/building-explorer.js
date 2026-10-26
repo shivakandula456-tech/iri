@@ -563,6 +563,12 @@ export class BuildingExplorer {
     this.walking = false;
     this.heldKeys.clear();
     this.rotateEnabled = false;
+    // Never let an inspection-only layer toggle leak into the public exterior.
+    // Closing the explorer should always restore the complete default model.
+    this.layerVisibility = {
+      massing: true, floorPlates: true, glazing: true,
+      metalwork: true, balustrades: true, roof: true, site: true
+    };
     this.mode = 'exterior';
     this._applyVisualMode();
     const saved = this.savedExterior;
