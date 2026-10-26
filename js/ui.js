@@ -35,6 +35,7 @@ export function createUI({
   onExplorerRotate = () => {},
   onExplorerRoom = () => {},
   onExplorerWalkDirection = () => {},
+  onExplorerLayerToggle = () => {},
   onClearInspection = () => {},
   onSkipIntro = () => {},
   onSheetOpen = () => {},
@@ -394,6 +395,13 @@ export function createUI({
   elements.explorerReturnToFloor.addEventListener('click', () => onExplorerReturnFloor());
   elements.explorerReassemble.addEventListener('click', () => onExplorerReassemble());
   elements.explorerRotateFloor.addEventListener('click', () => onExplorerRotate());
+  elements.buildingExplorerPanel.querySelectorAll('[data-explorer-layer]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const layer = button.dataset.explorerLayer;
+      const visible = button.getAttribute('aria-pressed') !== 'true';
+      onExplorerLayerToggle(layer, visible);
+    });
+  });
   elements.explorerWalkControls.querySelectorAll('[data-walk]').forEach((button) => {
     const direction = button.dataset.walk;
     const release = () => onExplorerWalkDirection(direction, false);
@@ -501,6 +509,13 @@ export function createUI({
       elements.explorerCutControl.hidden = !['cutaway', 'vertical'].includes(mode);
       elements.explorerCutDepth.value = String(state.cutDepth ?? 6);
       elements.explorerCutDepthLabel.textContent = `${Number(state.cutDistanceFromFront ?? (HALF_D - Number(state.cutDepth ?? 6))).toFixed(1)} m from front`;
+      elements.buildingExplorerPanel.querySelectorAll('[data-explorer-layer]').forEach((button) => {
+        const layer = button.dataset.explorerLayer;
+        const visible = state.layerVisibility?.[layer] !== false;
+        button.setAttribute('aria-pressed', String(visible));
+        button.classList.toggle('is-active', visible);
+        button.textContent = `${button.dataset.layerLabel} · ${visible ? 'On' : 'Off'}`;
+      });
       elements.explorerRoomSection.hidden = !['xray', 'cutaway', 'vertical', 'floor', 'interior'].includes(mode);
       elements.explorerWalkControls.hidden = !Boolean(state.walking);
       elements.explorerModelNotice.textContent = state.proxyFloorsOnly
