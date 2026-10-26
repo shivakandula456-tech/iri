@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/immersive-architectural-experience
+  workflow_dispatch:
 
 permissions:
   contents: read
