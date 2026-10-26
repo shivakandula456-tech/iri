@@ -384,8 +384,8 @@ async function runFeature(id) {
     }
     if (id === 'cutaway') {
       await ensureExplorer();
-      clickExisting('explorerCutawayMode');
-      toast('Cutaway mode active. Adjust the cut-plane slider to reveal more of the selected floor.');
+      clickExisting('explorerVerticalCutawayMode');
+      toast('Vertical tower cutaway active. Adjust the cut-plane slider to inspect the building section.');
       return;
     }
     if (id === 'layers') {
