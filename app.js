@@ -779,15 +779,32 @@ function setExplorerWalkDirection(direction, active) {
 }
 
 function bindEvents() {
-  window.addEventListener('resize', () => {
+  let viewportResizeFrame = 0;
+  const resizeSceneToViewport = () => {
     if (!renderer || !camera) return;
-    const width = window.innerWidth;
-    const height = window.innerHeight;
+    const shell = document.getElementById('app');
+    const rect = shell?.getBoundingClientRect();
+    const width = Math.max(1, Math.round(rect?.width || window.visualViewport?.width || document.documentElement.clientWidth || window.innerWidth));
+    const height = Math.max(1, Math.round(rect?.height || window.visualViewport?.height || document.documentElement.clientHeight || window.innerHeight));
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
-    quality?.resize();
+    quality?.resize(width, height);
     composer?.setSize(width, height);
-  });
+  };
+  const scheduleViewportResize = () => {
+    if (viewportResizeFrame) cancelAnimationFrame(viewportResizeFrame);
+    viewportResizeFrame = requestAnimationFrame(() => {
+      viewportResizeFrame = 0;
+      resizeSceneToViewport();
+    });
+  };
+  window.addEventListener('resize', scheduleViewportResize, { passive: true });
+  window.visualViewport?.addEventListener('resize', scheduleViewportResize, { passive: true });
+  const appShell = document.getElementById('app');
+  if (appShell && 'ResizeObserver' in window) {
+    const sceneResizeObserver = new ResizeObserver(scheduleViewportResize);
+    sceneResizeObserver.observe(appShell);
+  }
 
   window.addEventListener('keydown', onKeyDown);
 
