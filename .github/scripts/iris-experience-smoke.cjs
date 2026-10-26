@@ -65,6 +65,17 @@ const assert = (condition, message) => {
     });
     await page.waitForFunction(() => Math.abs((window.__IRIS_APP__?.buildingExplorer?.cutDepth || 0) - 3.4) < 0.01, null, { timeout: 5000 });
     assert(true, 'vertical cutaway slider updates the live clipping plane');
+    await page.locator('[data-explorer-layer="floorPlates"]').click();
+    await page.waitForFunction(() => {
+      const plates = window.__IRIS_APP__?.buildingExplorer?.floorPlates;
+      return window.__IRIS_APP__?.buildingExplorer?.layerVisibility?.floorPlates === false && plates?.size > 0 && [...plates.values()].every((plate) => plate.visible === false);
+    }, null, { timeout: 5000 });
+    await page.locator('[data-explorer-layer="floorPlates"]').click();
+    await page.waitForFunction(() => {
+      const plates = window.__IRIS_APP__?.buildingExplorer?.floorPlates;
+      return window.__IRIS_APP__?.buildingExplorer?.layerVisibility?.floorPlates === true && plates?.size > 0 && [...plates.values()].every((plate) => plate.visible === true);
+    }, null, { timeout: 5000 });
+    assert(true, 'conceptual floor plates toggle off and on without leaving vertical cutaway');
     await returnExterior();
 
     await openFeature('blueprint');
@@ -99,7 +110,7 @@ const assert = (condition, message) => {
     await openFeature('layers');
     await waitForExplorerMode('xray');
     assert(await page.locator('#explorerFloorRail').isVisible(), 'architectural layer option opens floor and layer controls');
-    assert(await page.locator('[data-explorer-layer]').count() === 6, 'architectural layer explorer exposes six layer groups');
+    assert(await page.locator('[data-explorer-layer]').count() === 7, 'architectural layer explorer exposes seven layer groups');
     await page.locator('[data-explorer-layer="glazing"]').click();
     await page.waitForFunction(() => {
       const explorer = window.__IRIS_APP__?.buildingExplorer;
