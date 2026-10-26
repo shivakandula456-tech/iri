@@ -76,6 +76,7 @@ export class BuildingExplorer {
     this.floorPlates = new Map();
     this.layerVisibility = {
       massing: true,
+      floorPlates: true,
       glazing: true,
       metalwork: true,
       balustrades: true,
@@ -362,7 +363,7 @@ export class BuildingExplorer {
     };
     this.active = true;
     this.mode = 'exterior';
-    this.layerVisibility = { massing: true, glazing: true, metalwork: true, balustrades: true, roof: true, site: true };
+    this.layerVisibility = { massing: true, floorPlates: true, glazing: true, metalwork: true, balustrades: true, roof: true, site: true };
     this.selectedFloor = clamp(this.selectedFloor, 1, BUILDING.levels);
     this.rotateEnabled = false;
     if (this.interiorAssets[this.selectedFloor]) void this.loadInteriorAsset(this.selectedFloor);
@@ -702,6 +703,18 @@ export class BuildingExplorer {
       const enabled = this.layerVisibility[layer] !== false;
       for (const { object, visible } of records) {
         object.visible = visible && enabled && (!nonFloorObjects.has(object) || this.layerVisibility.roof !== false);
+      }
+    }
+    const showPlates = this.layerVisibility.floorPlates !== false;
+    for (const [floorNumber, plate] of this.floorPlates) {
+      if (!showPlates) {
+        plate.visible = false;
+      } else if (this.mode === 'vertical') {
+        plate.visible = true;
+      } else if ((this.mode === 'cutaway' || this.mode === 'floor') && floorNumber === this.selectedFloor) {
+        plate.visible = true;
+      } else {
+        plate.visible = false;
       }
     }
     if (this.site?.group) {
