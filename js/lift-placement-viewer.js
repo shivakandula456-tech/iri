@@ -1,8 +1,5 @@
 import * as THREE from 'three';
 import { OrbitControls } from '../assets/vendor/OrbitControls.js';
-import { createMaterials } from './materials.js';
-import { buildBuilding } from './building.js';
-import { BuildingExplorer } from './building-explorer.js';
 import { BUILDING, HALF_D, HALF_L, ROOF_Y } from './config.js';
 import { LIFT_DATA_NOTICE, LIFT_PLACEMENTS } from './lift-data.js';
 
@@ -116,22 +113,21 @@ function addLiftMeshes(app) {
 function createStandaloneApp() {
   const canvas = document.getElementById('scene');
   if (!canvas) throw new Error('Lift viewer canvas is missing.');
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
+  const renderer = new THREE.WebGLRenderer({
+    canvas, antialias: true, alpha: false, powerPreference: 'high-performance'
+  });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   renderer.setSize(window.innerWidth, window.innerHeight, false);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.08;
-  renderer.localClippingEnabled = true;
-
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x0b1419);
   scene.fog = new THREE.FogExp2(0x0b1419, 0.0007);
   const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 1000);
   const target = new THREE.Vector3(0, ROOF_Y * 0.52, 0);
-  camera.position.set(88, Math.max(ROOF_Y + 18, 68), 116);
+  camera.position.set(76, Math.max(ROOF_Y + 17, 64), 116);
   camera.lookAt(target);
-
   const controls = new OrbitControls(camera, canvas);
   controls.target.copy(target);
   controls.enableDamping = true;
@@ -139,7 +135,6 @@ function createStandaloneApp() {
   controls.minDistance = 25;
   controls.maxDistance = 240;
   controls.update();
-
   scene.add(new THREE.HemisphereLight(0xd9e4ec, 0x282b2b, 2.0));
   const keyLight = new THREE.DirectionalLight(0xffd3a7, 2.6);
   keyLight.position.set(-70, 135, 92);
@@ -148,25 +143,12 @@ function createStandaloneApp() {
   fillLight.position.set(80, 72, -110);
   scene.add(fillLight);
 
-  const materials = createMaterials(renderer);
-  const building = buildBuilding(materials);
-  scene.add(building.group);
-  const buildingExplorer = new BuildingExplorer({
-    scene, camera, controls, renderer, building, site: null,
-    onStateChange: () => {},
-    onToast: (message) => {
-      const status = document.getElementById('irisLiftStatus');
-      if (status) status.textContent = message;
-    }
-  });
-  const app = { THREE, scene, camera, renderer, controls, building, buildingExplorer };
+  const app = { THREE, scene, camera, renderer, controls };
   let lastTime = performance.now();
   const animate = () => {
     requestAnimationFrame(animate);
     const now = performance.now();
-    const dt = Math.min(Math.max((now - lastTime) / 1000, 0), 0.05);
     lastTime = now;
-    buildingExplorer.update(dt);
     controls.update();
     renderer.render(scene, camera);
   };
@@ -179,6 +161,75 @@ function createStandaloneApp() {
   return app;
 }
 
+function createTowerScaffold(app) {
+  const T = app.THREE;
+  const tower = new T.Group();
+  tower.name = 'Conceptual open-front tower cutaway';
+  const totalHeight = ROOF_Y + BUILDING.crownHeight;
+  const slabMaterial = new T.MeshStandardMaterial({
+    color: 0x71838a, roughness: 0.82, metalness: 0.08,
+    transparent: true, opacity: 0.56, depthWrite: true
+  });
+  const slabEdgeMaterial = new T.LineBasicMaterial({
+    color: 0xc2cfd0, transparent: true, opacity: 0.38
+  });
+  const shellMaterial = new T.MeshStandardMaterial({
+    color: 0x6e8790, roughness: 0.88, metalness: 0.04,
+    transparent: true, opacity: 0.13, depthWrite: false, side: T.DoubleSide
+  });
+  const frameMaterial = new T.MeshStandardMaterial({
+    color: 0xd0b27f, roughness: 0.5, metalness: 0.22,
+    transparent: true, opacity: 0.64, depthWrite: true
+  });
+
+  const slabYs = [0.15];
+  for (let level = 1; level <= BUILDING.levels; level += 1) {
+    slabYs.push(BUILDING.groundHeight + (level - 1) * BUILDING.floorHeight);
+  }
+  for (let i = 0; i < slabYs.length; i += 1) {
+    const slab = new T.Mesh(
+      new T.BoxGeometry(BUILDING.length - 2.6, 0.16, BUILDING.depth - 1.5),
+      slabMaterial
+    );
+    slab.position.set(0, slabYs[i], 0);
+    slab.name = 'Conceptual floor plate ' + i;
+    tower.add(slab);
+    const edges = new T.LineSegments(new T.EdgesGeometry(slab.geometry), slabEdgeMaterial);
+    edges.position.copy(slab.position);
+    tower.add(edges);
+  }
+
+  const rearWall = new T.Mesh(new T.BoxGeometry(BUILDING.length, totalHeight, 0.18), shellMaterial);
+  rearWall.position.set(0, totalHeight / 2, -HALF_D);
+  rearWall.name = 'Transparent rear tower plane';
+  tower.add(rearWall);
+  for (const x of [-HALF_L, HALF_L]) {
+    const side = new T.Mesh(new T.BoxGeometry(0.18, totalHeight, BUILDING.depth), shellMaterial);
+    side.position.set(x, totalHeight / 2, 0);
+    side.name = x < 0 ? 'Left tower edge' : 'Right tower edge';
+    tower.add(side);
+  }
+
+  for (const x of [-HALF_L + 0.45, -HALF_L / 2, 0, HALF_L / 2, HALF_L - 0.45]) {
+    const frontPier = new T.Mesh(new T.BoxGeometry(0.28, totalHeight, 0.24), frameMaterial);
+    frontPier.position.set(x, totalHeight / 2, HALF_D - 0.12);
+    frontPier.name = 'Conceptual front frame pier';
+    tower.add(frontPier);
+    const rearPier = new T.Mesh(new T.BoxGeometry(0.28, totalHeight, 0.24), frameMaterial);
+    rearPier.position.set(x, totalHeight / 2, -HALF_D + 0.12);
+    rearPier.name = 'Conceptual rear frame pier';
+    tower.add(rearPier);
+  }
+  const roofLine = new T.LineSegments(
+    new T.EdgesGeometry(new T.BoxGeometry(BUILDING.length, 0.12, BUILDING.depth)),
+    new T.LineBasicMaterial({ color: 0xd7b47a, transparent: true, opacity: 0.8 })
+  );
+  roofLine.position.y = ROOF_Y;
+  tower.add(roofLine);
+  app.scene.add(tower);
+  app.tower = tower;
+  return tower;
+}
 async function startViewer() {
   document.documentElement.classList.add('lift-view-mode');
   document.title='IRIS Residences · Lift Placement Viewer';
@@ -187,14 +238,14 @@ async function startViewer() {
   try {
     root.dataset.state = 'starting';
     const app = createStandaloneApp();
-    root.querySelector('#irisLiftStatus').textContent = 'Building the conceptual tower cutaway…';
-    app.buildingExplorer.open();
-    app.buildingExplorer.setMode('vertical');
-    await waitFor(() => app.buildingExplorer.getState().flightActive === false, 8000);
-    const target=new THREE.Vector3(5.5,ROOF_Y*.51,0);
-    app.camera.position.set(76,Math.max(ROOF_Y+17,64),116);app.camera.lookAt(target);
-    app.controls.target.copy(target);app.controls.enabled=true;app.controls.update();
-    const geom=addLiftMeshes(app);
+    root.querySelector('#irisLiftStatus').textContent = 'Drawing the conceptual tower section…';
+    createTowerScaffold(app);
+    const target = new THREE.Vector3(5.5, ROOF_Y * 0.51, 0);
+    app.camera.position.set(76, Math.max(ROOF_Y + 17, 64), 116);
+    app.camera.lookAt(target);
+    app.controls.target.copy(target);
+    app.controls.update();
+    const geom = addLiftMeshes(app);
     let selectedFloor=Math.min(8,BUILDING.levels),selectedLiftId=null,showStops=true,showDoors=true,showCars=true,opacity=.28;
     const renderList=()=>{root.querySelector('#irisLiftList').innerHTML=LIFT_PLACEMENTS.map(l=>'<button class="lift-option" type="button" data-lift-choice="'+l.id+'" aria-pressed="'+(selectedLiftId===l.id)+'" style="--lift-color:'+l.color+'"><i class="lift-option-swatch"></i><span><span class="lift-option-label">'+l.label+'</span><span class="lift-option-status">Conceptual position</span></span></button>').join('');};
     const apply=()=>{
