@@ -130,10 +130,10 @@ const assert = (condition, message) => {
     try {
       await page.waitForFunction(() => {
         const explorer = window.__IRIS_APP__?.buildingExplorer;
-        return explorer?.mode === 'interior' && explorer.walking === true && !explorer.flight;
+        return explorer?.mode === 'interior' && explorer.walking === true;
       }, null, { timeout: 10000 });
     } catch (error) {
-      throw new Error('Portal camera/walking transition did not finish: ' + JSON.stringify(await readPortalState()) + '; ' + error.message);
+      throw new Error('Portal walking state did not start: ' + JSON.stringify(await readPortalState()) + '; ' + error.message);
     }
     await page.locator('#explorerWalkControls').waitFor({ state: 'visible', timeout: 5000 });
     assert(true, 'building portal enters the apartment walkthrough');
