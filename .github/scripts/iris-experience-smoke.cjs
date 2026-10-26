@@ -74,12 +74,21 @@ const assert = (condition, message) => {
 
     await openFeature('sunlight');
     assert(await page.locator('#lightTool').evaluate((el) => el.open), 'sunlight option opens atmosphere controls');
+    const sunBefore = await page.evaluate(() => {
+      const sun = window.__IRIS_APP__?.lightingController?.sun;
+      return sun ? { x: sun.position.x, y: sun.position.y, z: sun.position.z } : null;
+    });
     await page.locator('#timeOfDay').evaluate((el) => {
       el.value = '12';
       el.dispatchEvent(new Event('input', { bubbles: true }));
       el.dispatchEvent(new Event('change', { bubbles: true }));
     });
     assert((await page.locator('#timeOfDay').inputValue()) === '12', 'time-of-day slider accepts a new setting');
+    await page.waitForFunction((before) => {
+      const sun = window.__IRIS_APP__?.lightingController?.sun;
+      return before && sun && (Math.abs(sun.position.x - before.x) > 0.1 || Math.abs(sun.position.y - before.y) > 0.1 || Math.abs(sun.position.z - before.z) > 0.1);
+    }, sunBefore, { timeout: 5000 });
+    assert(true, 'time-of-day control changes the conceptual sun position');
     await returnExterior();
 
     await openFeature('portal');
@@ -115,13 +124,28 @@ const assert = (condition, message) => {
     await page.locator('#irisComparePanel').waitFor({ state: 'visible' });
     await page.locator('#irisCaptureA').click();
     await page.waitForFunction(() => document.getElementById('irisCompareImageA')?.src.startsWith('data:image/png'));
+    await page.locator('[data-close-tool="compare"]').click();
+    await page.locator('#lightTool').evaluate((el) => { el.open = true; });
+    await page.locator('#timeOfDay').evaluate((el) => {
+      el.value = '18';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    await page.waitForFunction((before) => {
+      const sun = window.__IRIS_APP__?.lightingController?.sun;
+      return before && sun && (Math.abs(sun.position.x - before.x) > 0.1 || Math.abs(sun.position.y - before.y) > 0.1 || Math.abs(sun.position.z - before.z) > 0.1);
+    }, { x: 0, y: 0, z: 0 }, { timeout: 5000 }).catch(() => {});
+    await openFeature('compare');
+    await page.locator('#irisComparePanel').waitFor({ state: 'visible' });
     await page.locator('#irisCaptureB').click();
     await page.waitForFunction(() => document.getElementById('irisCompareImageB')?.src.startsWith('data:image/png'));
+    const compareImagesDiffer = await page.evaluate(() => document.getElementById('irisCompareImageA')?.src !== document.getElementById('irisCompareImageB')?.src);
     await page.locator('#irisCompareRange').evaluate((el) => {
       el.value = '30';
       el.dispatchEvent(new Event('input', { bubbles: true }));
     });
-    assert(await page.locator('#irisCompareStatus').textContent().then((s) => s.includes('Both views are ready')), 'comparison captures two views and updates the split control');
+    assert(compareImagesDiffer, 'comparison captures two distinct rendered views');
+    assert(await page.locator('#irisCompareStatus').textContent().then((s) => s.includes('Both views are ready')), 'comparison split control reflects both saved views');
     await returnExterior();
 
     await openFeature('postcard');
