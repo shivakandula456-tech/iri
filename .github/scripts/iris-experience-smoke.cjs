@@ -27,7 +27,7 @@ const assert = (condition, message) => {
     page.setDefaultTimeout(15000);
     page.on('pageerror', (error) => failures.push(error.message));
     await page.goto(baseURL, { waitUntil: 'domcontentloaded' });
-    await page.waitForFunction(() => Boolean(window.__IRIS_APP__?.ready), { timeout: 60000 });
+    await page.waitForFunction(() => Boolean(window.__IRIS_APP__?.ready), null, { timeout: 60000 });
     await page.waitForSelector('#irisExperienceMenuButton:not([disabled])', { timeout: 20000 });
     pass('3D viewer reaches ready state');
 
@@ -49,7 +49,7 @@ const assert = (condition, message) => {
       await page.waitForFunction(() => {
         const app = window.__IRIS_APP__;
         return app && !app.buildingExplorer?.active && app.mode === 'orbit' && !app.blueprintController?.enabled;
-      }, { timeout: 12000 });
+      }, null, { timeout: 12000 });
     };
 
     await menuButton.click();
@@ -62,7 +62,7 @@ const assert = (condition, message) => {
     await returnExterior();
 
     await openFeature('blueprint');
-    await page.waitForFunction(() => window.__IRIS_APP__?.buildingExplorer?.active && window.__IRIS_APP__?.buildingExplorer?.mode === 'interior', { timeout: 25000 });
+    await page.waitForFunction(() => window.__IRIS_APP__?.buildingExplorer?.active && window.__IRIS_APP__?.buildingExplorer?.mode === 'interior', null, { timeout: 25000 });
     assert(await page.locator('#explorerRoomSection').isVisible(), 'blueprint morph reaches the apartment experience');
     await returnExterior();
 
@@ -112,7 +112,7 @@ const assert = (condition, message) => {
       const image = document.getElementById('irisPostcardPreview');
       const link = document.getElementById('irisDownloadPostcard');
       return image && !image.hidden && image.src.startsWith('blob:') && link && !link.hidden && link.href.startsWith('blob:');
-    }, { timeout: 15000 });
+    }, null, { timeout: 15000 });
     const downloadWait = page.waitForEvent('download', { timeout: 10000 });
     await page.locator('#irisDownloadPostcard').click();
     const download = await downloadWait;
