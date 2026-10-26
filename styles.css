@@ -2385,3 +2385,40 @@ body.is-building-explorer .top-actions .explore-floors-button span {
   font-size:7.5px;
   line-height:1.45;
 }
+
+
+/* Layer controls stay visually distinct from camera modes and remain scrollable
+   inside the existing IRIS Inside panel on compact screens. */
+.explorer-layer-section {
+  margin-top: 13px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(244, 238, 224, 0.1);
+}
+.explorer-layer-section .explorer-section-heading {
+  margin-bottom: 7px;
+}
+.explorer-layer-grid button {
+  text-align: left;
+  overflow-wrap: anywhere;
+  min-height: 36px;
+}
+.explorer-layer-grid button[aria-pressed="false"] {
+  opacity: 0.7;
+  color: var(--muted);
+  border-style: dashed;
+  background: rgba(0, 0, 0, 0.12);
+}
+.explorer-layer-grid button[aria-pressed="true"] {
+  color: var(--ivory);
+}
+@media (max-width: 620px) {
+  .explorer-layer-section {
+    margin-top: 11px;
+    padding-top: 10px;
+  }
+  .explorer-layer-grid button {
+    min-height: 40px;
+    padding: 8px;
+    font-size: 9px;
+  }
+}
