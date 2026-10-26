@@ -718,9 +718,9 @@ export class BuildingExplorer {
     for (const [floorNumber, plate] of this.floorPlates) {
       if (!showPlates) {
         plate.visible = false;
-      } else if (this.mode === 'vertical') {
+      } else if (this.mode === 'vertical' || this.mode === 'exploded') {
         plate.visible = true;
-      } else if ((this.mode === 'cutaway' || this.mode === 'floor') && floorNumber === this.selectedFloor) {
+      } else if (['cutaway', 'floor', 'xray'].includes(this.mode) && floorNumber === this.selectedFloor) {
         plate.visible = true;
       } else {
         plate.visible = false;
