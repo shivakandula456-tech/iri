@@ -34,12 +34,13 @@ Then open `http://localhost:8000/`. This is not an application backend and is no
 
 ## Deploy to GitHub Pages
 
-1. Upload the contents of this folder to the repository root (or configure the Pages publishing folder accordingly).
-2. Keep all relative paths and the complete `assets/`, `js/`, and `docs/` folders.
-3. Enable GitHub Pages for the appropriate branch/folder.
-4. Open the published `index.html` URL and complete the browser checklist in `docs/testing-checklist.md`.
+The workflow `.github/workflows/deploy-iris-pages.yml` is configured to run on pushes to `feature/immersive-architectural-experience`. It checks JavaScript syntax, required files, duplicate HTML IDs and runs Playwright browser smoke tests for all eight menu options. The deployment job publishes the static site only when verification succeeds. New pushes cancel older in-progress runs so the newest branch state is the version published.
 
-No framework, build pipeline, database, API key or custom backend is required. The default procedural viewer uses locally bundled Three.js and local reference assets. When `EXTERIOR_MODEL_URL` is explicitly set to a `.glb` asset, the optional GLTFLoader is imported lazily from the pinned Three.js r164 CDN module; that optional model-loading path therefore requires internet access.
+**One-time GitHub setting:** open repository **Settings → Pages → Build and deployment → Source** and select **GitHub Actions**. If the existing Pages deployment environment has branch restrictions, allow `feature/immersive-architectural-experience` to deploy. Without this setting or permission, the workflow can run but Pages deployment may fail.
+
+Published site: https://shivakandula456-tech.github.io/iri/
+
+The site remains static HTML/CSS/vanilla JavaScript with locally bundled Three.js and no app backend, framework, API keys or build step. When `EXTERIOR_MODEL_URL` is explicitly set to a `.glb` asset, the optional GLTFLoader is imported lazily from the pinned Three.js r164 CDN module; that optional model-loading path requires internet access.
 
 ## Optional architect-supplied GLB
 
@@ -58,10 +59,26 @@ Place a licensed, approved `.glb` file in `assets/models/` and update `EXTERIOR_
 - `O`: Orbit, `F`: Free-look, `I`: Replay intro, `Home`: reset camera, `Escape`: exit free-look or release pointer lock.
 - Intro can be skipped immediately; interaction stops the cinematic camera movement.
 
+### Explore IRIS — eight connected experiences
+
+Open **Explore IRIS** in the top navigation to find all eight options in one responsive menu:
+
+1. **Vertical Building Cutaway** — cut through the tower across all modeled levels, show conceptual floor plates, and adjust the live cut plane. The selected-floor cutaway remains available inside IRIS Inside.
+2. **Blueprint-to-Apartment Morph** — transition from the architectural edge view into the illustrative apartment walkthrough.
+3. **Sunlight & Shadow Explorer** — change the time-of-day control to move the conceptual sun direction, update lighting and refresh the scene shadow map. It is a visual study, not location-calibrated solar analysis.
+4. **Seamless Building Portal** — enter the sample apartment directly from the exterior.
+5. **Architectural Layer Explorer** — open IRIS Inside with X-ray, floor isolation, selected-floor cutaway and exploded-tower controls.
+6. **Room-to-Room Journey** — enter the apartment and navigate by the room list or conceptual plan.
+7. **Live Visual Comparison** — save two canvas snapshots and compare them using a movable split divider.
+8. **Architectural Postcard Studio** — add a title and caption to the rendered view, preview it, and download a PNG.
+
+The menu controls orchestrate existing viewer functions. It is not a verified architectural model. Floor geometry, sample rooms and dimensions remain illustrative until approved project drawings or model assets are provided.
+
 ### IRIS Inside — interactive floors and sample apartment
 
 - Select **Explore floors** to open the IRIS Inside panel. Select a level from the floor rail or click a visible tower surface; the viewer highlights that level and moves the camera toward it.
-- Use **X-ray facade** to fade the selected level's real facade materials, **Reveal cutaway** to clip that level's front-side geometry, **Isolate floor** to show the selected level, or **Explode tower** to separate the floor groups. In cutaway mode, drag the **Cut plane depth** slider to reveal more or less of the selected floor. **Reassemble tower** returns the floor stack to the conceptual building arrangement.
+- Use **Vertical tower cutaway** to clip the full modeled tower and reveal a vertical section with conceptual floor plates. Use **Selected-floor cutaway** to clip only the chosen level. In either cutaway mode, drag the **Cut plane depth** slider to adjust the section. **Reassemble tower** returns the floor stack to the conceptual building arrangement.
+- Use **X-ray facade** to fade the selected level's facade materials, **Isolate floor** to show the selected level, or **Explode tower** to separate floor groups.
 - In floor/cutaway/exploded modes, enable **Rotate floor** and drag horizontally to rotate the selected level. Turn it off to restore normal camera control.
 - Use **Enter apartment** to move into the illustrative sample apartment. Drag to look; use WASD/arrow keys or the on-screen directional pad to move. Simple conceptual wall/furniture collision bounds help prevent walking directly through the sample partitions. Choose a room from the plan or room list to move to it. **Return to floor** exits the walk-through and **Return to exterior** restores the saved exterior camera.
 - Interior fixture lights and room lighting respond to the shared 07:00–20:00 atmosphere control. The current sample apartment, floor plates and room plan are illustrative geometry. No approved Iris Residences apartment drawings or interior `.glb` assets were supplied. They are not the project's verified unit plan, dimensions, fixture layout or number of rooms.
@@ -79,4 +96,4 @@ The `feature/immersive-architectural-experience` branch adds the guided tour and
 
 ## Current verification status
 
-The original baseline had static source checks and visual evidence, but the new feature branch has not yet been run through the full browser acceptance suite. Local browser navigation was blocked in the working environment. Follow `docs/testing-checklist.md`, including the guided-tour and lighting tests, before merging or declaring the feature branch release-ready.
+The GitHub Actions workflow now runs repeatable source checks and automated Playwright browser smoke tests before publishing from the feature branch. Review the latest run under the repository **Actions** tab. Do not treat a run as passed until its verification job succeeds and the deployment job completes. The in-chat environment has not independently completed a live WebGL browser session, so local/static checks are not a substitute for the Actions browser run. Use `docs/testing-checklist.md` for additional manual desktop and mobile acceptance tests.
