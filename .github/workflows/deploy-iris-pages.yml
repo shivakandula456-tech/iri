@@ -1,0 +1,155 @@
+name: Verify and deploy IRIS experience
+
+on:
+  push:
+    branches:
+      - feature/immersive-architectural-experience
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: iris-pages
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Source and browser checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      - name: Check JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            echo "Checking $file"
+            node --input-type=module --check < "$file"
+          done < <(find . -type f -name '*.js' -not -path './assets/vendor/*' -not -path './.git/*' -print0)
+          node --check .github/scripts/iris-experience-smoke.cjs
+
+      - name: Validate HTML ids and required entry files
+        run: |
+          python3 - <<'PY'
+          from collections import Counter
+          from html.parser import HTMLParser
+          from pathlib import Path
+
+          class IdParser(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.ids = []
+              def handle_starttag(self, tag, attrs):
+                  value = dict(attrs).get('id')
+                  if value:
+                      self.ids.append(value)
+
+          parser = IdParser()
+          parser.feed(Path('index.html').read_text(encoding='utf-8'))
+          duplicates = sorted(key for key, count in Counter(parser.ids).items() if count > 1)
+          if duplicates:
+              raise SystemExit('Duplicate HTML ids: ' + ', '.join(duplicates))
+          required = ['app.js', 'styles.css', 'lift-placement.html', 'js/experience-menu.js', 'js/building-explorer.js', 'js/lift-data.js', 'js/lift-placement-viewer.js']
+          missing = [path for path in required if not Path(path).is_file()]
+          if missing:
+              raise SystemExit('Missing required files: ' + ', '.join(missing))
+          if './js/experience-menu.js' not in Path('index.html').read_text(encoding='utf-8'):
+              raise SystemExit('index.html does not load the experience menu')
+          print(f'HTML ids unique ({len(parser.ids)} ids); required files present.')
+          PY
+
+      - name: Install Playwright
+        run: |
+          npm install --prefix /tmp/iris-playwright --no-save --no-package-lock --no-audit --no-fund playwright
+
+      - name: Download Chromium for Playwright
+        run: |
+          /tmp/iris-playwright/node_modules/.bin/playwright install chromium
+
+      - name: Run desktop and mobile feature smoke tests
+        env:
+          NODE_PATH: /tmp/iris-playwright/node_modules
+          IRIS_BASE_URL: http://127.0.0.1:8765/
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory . >/tmp/iris-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8765/index.html >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8765/index.html >/dev/null
+          node .github/scripts/iris-experience-smoke.cjs
+
+  deploy:
+    name: Publish to GitHub Pages
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out deployable site
+        uses: actions/checkout@v7
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
+      - name: Upload static site
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: .
+
+      - name: Deploy the feature branch
+        id: deployment
+        uses: actions/deploy-pages@v5
+
+      - name: Verify published site and experience assets
+        env:
+          DEPLOY_URL: ${{ steps.deployment.outputs.page_url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          site="${DEPLOY_URL%/}/"
+          index_file=/tmp/iris-published-index.html
+          lift_page_file=/tmp/iris-published-lift-page.html
+          menu_file=/tmp/iris-published-menu.js
+          lift_file=/tmp/iris-published-lift-viewer.js
+          lift_data_file=/tmp/iris-published-lift-data.js
+          published=false
+          for attempt in $(seq 1 30); do
+            if curl -fsS "${site}index.html" -o "$index_file"; then
+              published=true
+              break
+            fi
+            sleep 5
+          done
+          test "$published" = true
+          grep -q './js/experience-menu.js' "$index_file"
+          curl -fsS "${site}lift-placement.html" -o "$lift_page_file"
+          grep -q './js/lift-placement-viewer.js' "$lift_page_file"
+          curl -fsS "${site}js/experience-menu.js" -o "$menu_file"
+          grep -q 'Vertical Building Cutaway' "$menu_file"
+          grep -q 'Architectural Postcard Studio' "$menu_file"
+          grep -q 'Lift Placement Viewer' "$menu_file"
+          curl -fsS "${site}js/lift-placement-viewer.js" -o "$lift_file"
+          curl -fsS "${site}js/lift-data.js" -o "$lift_data_file"
+          grep -q 'IRIS Residences · Lift Placement Viewer' "$lift_file"
+          grep -q 'LIFT-A' "$lift_data_file"
+          echo "Published index, nine-experience menu and lift viewer assets are reachable at ${site}"
+

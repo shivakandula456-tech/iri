@@ -74,7 +74,20 @@ export class BuildingExplorer {
     this.floorGroups = new Map(building.floorGroups || []);
     this.staticChildren = [];
     this.floorPlates = new Map();
+    this.layerVisibility = {
+      massing: true,
+      floorPlates: true,
+      glazing: true,
+      metalwork: true,
+      balustrades: true,
+      roof: true,
+      site: true
+    };
+    this.layerObjects = new Map([
+      ['massing', []], ['glazing', []], ['metalwork', []], ['balustrades', []]
+    ]);
     this._captureBuildingLayers();
+    this._captureArchitecturalLayers();
     this.floorHighlight = this._createFloorHighlight();
     this.interiorRoot = new THREE.Group();
     this.interiorRoot.name = 'Interactive apartment interior container';
@@ -350,6 +363,7 @@ export class BuildingExplorer {
     };
     this.active = true;
     this.mode = 'exterior';
+    this.layerVisibility = { massing: true, floorPlates: true, glazing: true, metalwork: true, balustrades: true, roof: true, site: true };
     this.selectedFloor = clamp(this.selectedFloor, 1, BUILDING.levels);
     this.rotateEnabled = false;
     if (this.interiorAssets[this.selectedFloor]) void this.loadInteriorAsset(this.selectedFloor);
@@ -386,7 +400,7 @@ export class BuildingExplorer {
 
   setMode(mode) {
     if (!this.active) return;
-    const allowed = new Set(['exterior', 'xray', 'cutaway', 'exploded', 'floor']);
+    const allowed = new Set(['exterior', 'xray', 'cutaway', 'vertical', 'exploded', 'floor']);
     if (!allowed.has(mode)) return;
     this.walking = false;
     this.rotateEnabled = false;
@@ -400,6 +414,15 @@ export class BuildingExplorer {
         new THREE.Vector3(0, ROOF_Y * 0.5, 0),
         1200,
         13
+      );
+    } else if (mode === 'vertical') {
+      // Keep the entire section in frame; selected-floor modes intentionally
+      // fly closer, but a vertical tower cutaway must show multiple levels.
+      this._flyTo(
+        new THREE.Vector3(88, Math.max(ROOF_Y + 18, 68), 116),
+        new THREE.Vector3(0, ROOF_Y * 0.52, 0),
+        1200,
+        8
       );
     } else {
       this._flyTo(this._floorCameraPosition(), this._floorTarget(), 1000, mode === 'cutaway' || mode === 'xray' ? 5 : 3);
@@ -445,9 +468,12 @@ export class BuildingExplorer {
   enterApartment() {
     if (!this.active) return;
     this.mode = 'interior';
-    this.walking = true;
     this.rotateEnabled = false;
     this._applyVisualMode();
+    // _applyVisualMode() calls _stopWalk() while resetting the previous mode.
+    // Re-enter walking mode after that reset so the interior state is correct
+    // during the camera fly-in as well as after it completes.
+    this.walking = true;
     this.interiorRoot.position.y = this._floorBottom();
     this._flyTo(
       new THREE.Vector3(0, this._floorBottom() + 1.62, 5.5),
@@ -533,36 +559,32 @@ export class BuildingExplorer {
 
   close() {
     if (!this.active) return;
-    if (this.flight) {
-      this.flight = null;
-      this.controls.enabled = true;
-    }
+    // Restore the exterior immediately, even if another camera flight was interrupted.
+    this.flight = null;
     this.walking = false;
     this.heldKeys.clear();
     this.rotateEnabled = false;
+    this.layerVisibility = {
+      massing: true, floorPlates: true, glazing: true,
+      metalwork: true, balustrades: true, roof: true, site: true
+    };
     this.mode = 'exterior';
     this._applyVisualMode();
     const saved = this.savedExterior;
-    if (!saved) {
-      this.active = false;
-      this.floorHighlight.visible = false;
-      this._emitState();
-      return;
-    }
-    this._flyTo(saved.position, saved.target, 1050, 0.8, () => {
+    if (saved) {
       this.camera.position.copy(saved.position);
       this.controls.target.copy(saved.target);
       this.camera.lookAt(saved.target);
       this.controls.minDistance = saved.minDistance;
       this.controls.maxDistance = saved.maxDistance;
-      this.controls.enabled = saved.enabled;
       if (this.site?.group) this.site.group.visible = saved.siteVisible;
-      this.active = false;
-      this.floorHighlight.visible = false;
-      this.flight = null;
-      this.savedExterior = null;
-      this._emitState();
-    });
+      this.controls.enabled = saved.enabled;
+    } else {
+      this.controls.enabled = true;
+    }
+    this.active = false;
+    this.floorHighlight.visible = false;
+    this.savedExterior = null;
     this._emitState();
   }
 
@@ -600,6 +622,15 @@ export class BuildingExplorer {
       this.interiorRoot.position.y = this._floorBottom();
       const plate = this.floorPlates.get(this.selectedFloor);
       if (plate) plate.visible = true;
+    } else if (this.mode === 'vertical') {
+      // Clip the full tower, not just the selected floor, to expose a vertical
+      // section. Floor plates and the illustrative selected-floor rooms remain
+      // visible as reading aids; the interior layout is explicitly conceptual.
+      this._applyClipping({ selectedFloorOnly: false });
+      this.interiorRoot.visible = true;
+      this.interiorRoot.position.y = this._floorBottom();
+      for (const plate of this.floorPlates.values()) plate.visible = true;
+      this.floorHighlight.visible = false;
     } else if (this.mode === 'exploded') {
       if (this.site?.group) this.site.group.visible = false;
       for (const { object } of this.staticChildren) object.visible = false;
@@ -637,6 +668,68 @@ export class BuildingExplorer {
       this.floorHighlight.visible = false;
     }
     this._updateRoomZones();
+    this._applyLayerVisibility();
+  }
+
+  _captureArchitecturalLayers() {
+    const materialNames = (object) => {
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      return materials.filter(Boolean).map((material) => String(material.name || '')).join(' ').toLowerCase();
+    };
+    this.building.group.traverse((object) => {
+      if (!object.isMesh || !object.material) return;
+      const names = materialNames(object);
+      let layer = null;
+      if (names.includes('balustrade')) layer = 'balustrades';
+      else if (names.includes('glass') || names.includes('glazing')) layer = 'glazing';
+      else if (/bronze|aluminium|metal|recessed channel|rail/.test(names)) layer = 'metalwork';
+      else if (/facade white|soft white|ivory soffit|concrete|stone plinth/.test(names)) layer = 'massing';
+      if (!layer) return;
+      this.layerObjects.get(layer).push({ object, visible: object.visible });
+    });
+  }
+
+  _applyLayerVisibility() {
+    // Non-floor batches are the procedural roof/crown, podium and entrance
+    // elements. Apply the roof switch first, then intersect it with the
+    // material-category switch so one control cannot accidentally re-enable
+    // an object hidden by another control.
+    const nonFloorObjects = new Set(this.staticChildren.map(({ object }) => object));
+    const modeHidesStatic = ['exploded', 'floor', 'interior'].includes(this.mode);
+    for (const { object, visible } of this.staticChildren) {
+      object.visible = visible && !modeHidesStatic && this.layerVisibility.roof !== false;
+    }
+    for (const [layer, records] of this.layerObjects) {
+      const enabled = this.layerVisibility[layer] !== false;
+      for (const { object, visible } of records) {
+        const roofAllows = !nonFloorObjects.has(object) || this.layerVisibility.roof !== false;
+        const modeAllows = !nonFloorObjects.has(object) || !modeHidesStatic;
+        object.visible = visible && enabled && roofAllows && modeAllows;
+      }
+    }
+    const showPlates = this.layerVisibility.floorPlates !== false;
+    for (const [floorNumber, plate] of this.floorPlates) {
+      if (!showPlates) {
+        plate.visible = false;
+      } else if (this.mode === 'vertical' || this.mode === 'exploded') {
+        plate.visible = true;
+      } else if (['cutaway', 'floor', 'xray'].includes(this.mode) && floorNumber === this.selectedFloor) {
+        plate.visible = true;
+      } else {
+        plate.visible = false;
+      }
+    }
+    const modeShowsSite = !['exploded', 'floor', 'interior'].includes(this.mode);
+    if (this.site?.group) {
+      this.site.group.visible = this.siteInitialVisibility && modeShowsSite && this.layerVisibility.site !== false;
+    }
+  }
+
+  setLayerVisibility(layer, visible) {
+    if (!Object.hasOwn(this.layerVisibility, layer)) return;
+    this.layerVisibility[layer] = Boolean(visible);
+    this._applyLayerVisibility();
+    this._emitState();
   }
 
   _applyXray() {
@@ -1025,6 +1118,7 @@ export class BuildingExplorer {
       selectedFloor: this.selectedFloor,
       floorCount: BUILDING.levels,
       mode: this.mode,
+      layerVisibility: { ...this.layerVisibility },
       rotateEnabled: this.rotateEnabled,
       walking: this.walking,
       selectedRoom: this.selectedRoom,

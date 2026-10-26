@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1419">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Conceptual IRIS Residences lift locations in a 3D tower cutaway and schematic floor plans.">
+  <title>IRIS Residences · Lift Placement Viewer</title>
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./assets/vendor/three.module.js",
+      "three/addons/": "./assets/vendor/"
+    }
+  }
+  </script>
+</head>
+<body data-mode="orbit">
+  <main id="app" class="app-shell">
+    <canvas id="scene" class="scene-canvas" tabindex="0" aria-label="Three-dimensional conceptual lift placement cutaway. Drag to orbit and scroll to zoom."></canvas>
+  </main>
+  <script type="module" src="./js/lift-placement-viewer.js"></script>
+</body>
+</html>

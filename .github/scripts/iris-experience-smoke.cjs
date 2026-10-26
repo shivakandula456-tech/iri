@@ -1,0 +1,334 @@
+
+const { chromium } = require('playwright');
+
+const baseURL = process.env.IRIS_BASE_URL || 'http://127.0.0.1:8765/';
+const failures = [];
+const pass = (message) => console.log('PASS  ' + message);
+const assert = (condition, message) => {
+  if (!condition) throw new Error(message);
+  pass(message);
+};
+
+(async () => {
+  const browser = await chromium.launch({
+    headless: true,
+    args: [
+      '--enable-webgl',
+      '--ignore-gpu-blocklist',
+      '--use-gl=angle',
+      '--use-angle=swiftshader',
+      '--enable-unsafe-swiftshader',
+      '--disable-dev-shm-usage'
+    ]
+  });
+
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 960 }, deviceScaleFactor: 1 });
+    page.setDefaultTimeout(15000);
+    page.on('pageerror', (error) => failures.push(error.message));
+    await page.addInitScript(() => { window.__IRIS_SMOKE_ERRORS__ = []; window.addEventListener('error', (event) => window.__IRIS_SMOKE_ERRORS__.push(event.message)); });
+    await page.goto(baseURL, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => Boolean(window.__IRIS_APP__?.ready), null, { timeout: 60000 });
+    await page.waitForSelector('#irisExperienceMenuButton:not([disabled])', { timeout: 20000 });
+    pass('3D viewer reaches ready state');
+
+    const menuButton = page.locator('#irisExperienceMenuButton');
+    const openFeature = async (id) => {
+      await menuButton.click();
+      await page.locator('#irisExperienceMenu').waitFor({ state: 'visible' });
+      await page.locator('[data-feature="' + id + '"]').click();
+    };
+    const waitForExplorerMode = async (mode) => page.waitForFunction(
+      (expected) => window.__IRIS_APP__?.buildingExplorer?.active && window.__IRIS_APP__?.buildingExplorer?.mode === expected,
+      mode,
+      { timeout: 20000 }
+    );
+    const returnExterior = async () => {
+      await menuButton.click();
+      await page.locator('#irisExperienceMenu').waitFor({ state: 'visible' });
+      await page.locator('#irisReturnExterior').click();
+      await page.waitForFunction(() => {
+        const app = window.__IRIS_APP__;
+        return app && !app.buildingExplorer?.active && app.mode === 'orbit' && !app.blueprintController?.enabled;
+      }, null, { timeout: 12000 });
+    };
+
+
+    await openFeature('cutaway');
+    await waitForExplorerMode('vertical');
+    assert(await page.locator('#explorerCutControl').isVisible(), 'vertical cutaway opens the full-tower cut-plane controls');
+    await page.locator('#explorerCutDepth').evaluate((el) => {
+      el.value = '3.4';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await page.waitForFunction(() => Math.abs((window.__IRIS_APP__?.buildingExplorer?.cutDepth || 0) - 3.4) < 0.01, null, { timeout: 5000 });
+    assert(true, 'vertical cutaway slider updates the live clipping plane');
+    await page.locator('[data-explorer-layer="floorPlates"]').click();
+    await page.waitForFunction(() => {
+      const plates = window.__IRIS_APP__?.buildingExplorer?.floorPlates;
+      return window.__IRIS_APP__?.buildingExplorer?.layerVisibility?.floorPlates === false && plates?.size > 0 && [...plates.values()].every((plate) => plate.visible === false);
+    }, null, { timeout: 5000 });
+    await page.locator('[data-explorer-layer="floorPlates"]').click();
+    await page.waitForFunction(() => {
+      const plates = window.__IRIS_APP__?.buildingExplorer?.floorPlates;
+      return window.__IRIS_APP__?.buildingExplorer?.layerVisibility?.floorPlates === true && plates?.size > 0 && [...plates.values()].every((plate) => plate.visible === true);
+    }, null, { timeout: 5000 });
+    assert(true, 'conceptual floor plates toggle off and on without leaving vertical cutaway');
+    await returnExterior();
+
+    await openFeature('blueprint');
+    await page.waitForFunction(() => window.__IRIS_APP__?.buildingExplorer?.active && window.__IRIS_APP__?.buildingExplorer?.mode === 'interior', null, { timeout: 25000 });
+    assert(await page.locator('#explorerRoomSection').isVisible(), 'blueprint morph reaches the apartment experience');
+    await returnExterior();
+
+    await openFeature('sunlight');
+    assert(await page.locator('#lightTool').evaluate((el) => el.open), 'sunlight option opens atmosphere controls');
+    const sunBefore = await page.evaluate(() => {
+      const sun = window.__IRIS_APP__?.lightingController?.sun;
+      return sun ? { x: sun.position.x, y: sun.position.y, z: sun.position.z } : null;
+    });
+    await page.locator('#timeOfDay').evaluate((el) => {
+      el.value = '12';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    assert((await page.locator('#timeOfDay').inputValue()) === '12', 'time-of-day slider accepts a new setting');
+    await page.waitForFunction((before) => {
+      const sun = window.__IRIS_APP__?.lightingController?.sun;
+      return before && sun && (Math.abs(sun.position.x - before.x) > 0.1 || Math.abs(sun.position.y - before.y) > 0.1 || Math.abs(sun.position.z - before.z) > 0.1);
+    }, sunBefore, { timeout: 5000 });
+    assert(true, 'time-of-day control changes the conceptual sun position');
+    await returnExterior();
+
+    await openFeature('portal');
+    const readPortalState = () => page.evaluate(() => {
+      const app = window.__IRIS_APP__;
+      const explorer = app?.buildingExplorer;
+      const toast = document.querySelector('#toast');
+      const button = document.getElementById('explorerEnterApartment');
+      return {
+        appReady: Boolean(app?.ready),
+        explorerActive: Boolean(explorer?.active),
+        mode: explorer?.mode ?? null,
+        walking: explorer?.walking ?? null,
+        flightActive: Boolean(explorer?.flight),
+        flightElapsed: explorer?.flight?.elapsed ?? null,
+        flightDuration: explorer?.flight?.duration ?? null,
+        enterButtonDisabled: button?.disabled ?? null,
+        toastText: toast?.textContent?.trim() ?? '',
+        pageErrors: window.__IRIS_SMOKE_ERRORS__ || []
+      };
+    });
+    try {
+      await page.waitForFunction(() => {
+        const explorer = window.__IRIS_APP__?.buildingExplorer;
+        return explorer?.active && explorer.mode === 'interior';
+      }, null, { timeout: 12000 });
+    } catch (error) {
+      throw new Error('Portal did not enter interior mode: ' + JSON.stringify(await readPortalState()) + '; ' + error.message);
+    }
+    try {
+      await page.waitForFunction(() => {
+        const explorer = window.__IRIS_APP__?.buildingExplorer;
+        return explorer?.mode === 'interior' && explorer.walking === true;
+      }, null, { timeout: 10000 });
+    } catch (error) {
+      throw new Error('Portal walking state did not start: ' + JSON.stringify(await readPortalState()) + '; ' + error.message);
+    }
+    await page.locator('#explorerWalkControls').waitFor({ state: 'visible', timeout: 5000 });
+    assert(true, 'building portal enters the apartment walkthrough');
+    await returnExterior();
+
+    await openFeature('layers');
+    await waitForExplorerMode('xray');
+    assert(await page.locator('#explorerFloorRail').isVisible(), 'architectural layer option opens floor and layer controls');
+    assert(await page.locator('[data-explorer-layer]').count() === 7, 'architectural layer explorer exposes seven layer groups');
+    await page.locator('#explorerExplodedMode').click();
+    await waitForExplorerMode('exploded');
+    await page.waitForFunction(() => {
+      const explorer = window.__IRIS_APP__?.buildingExplorer;
+      return explorer && [...explorer.floorGroups.entries()].filter(([key]) => typeof key === 'number').every(([floor, group]) => group.position.y === (floor - explorer.selectedFloor) * 1.38);
+    }, null, { timeout: 5000 });
+    assert(true, 'exploded tower separates the floor groups and floor plates');
+    await page.locator('#explorerReassemble').click();
+    await waitForExplorerMode('exterior');
+    await page.waitForFunction(() => {
+      const explorer = window.__IRIS_APP__?.buildingExplorer;
+      return explorer && [...explorer.floorGroups.values()].every((group) => group.position.y === 0 && group.rotation.y === 0);
+    }, null, { timeout: 5000 });
+    assert(true, 'reassemble restores tower floor groups and rotations');
+    const assertLayerToggle = async (layer) => {
+      const button = page.locator('[data-explorer-layer="' + layer + '"]');
+      await button.click();
+      await page.waitForFunction((key) => {
+        const app = window.__IRIS_APP__;
+        const explorer = app?.buildingExplorer;
+        if (!explorer || explorer.layerVisibility?.[key] !== false) return false;
+        if (key === 'site') return app.site?.group?.visible === false;
+        if (key === 'roof') return explorer.staticChildren.length > 0 && explorer.staticChildren.every(({ object }) => object.visible === false);
+        const records = explorer.layerObjects?.get(key);
+        return records?.length > 0 && records.every(({ object }) => object.visible === false);
+      }, layer, { timeout: 5000 });
+      assert(await button.getAttribute('aria-pressed') === 'false', layer + ' layer toggle hides its model objects');
+      await button.click();
+      await page.waitForFunction((key) => {
+        const app = window.__IRIS_APP__;
+        const explorer = app?.buildingExplorer;
+        if (!explorer || explorer.layerVisibility?.[key] !== true) return false;
+        if (key === 'site') return app.site?.group?.visible === true;
+        if (key === 'roof') return explorer.staticChildren.length > 0 && explorer.staticChildren.every(({ object, visible }) => object.visible === visible);
+        const records = explorer.layerObjects?.get(key);
+        return records?.length > 0 && records.every(({ object, visible }) => object.visible === visible);
+      }, layer, { timeout: 5000 });
+    };
+    for (const layer of ['glazing', 'massing', 'metalwork', 'balustrades', 'roof', 'site']) {
+      await assertLayerToggle(layer);
+    }
+    await page.locator('#explorerFloorMode').click();
+    await waitForExplorerMode('floor');
+    await page.waitForFunction(() => window.__IRIS_APP__?.site?.group?.visible === false, null, { timeout: 5000 });
+    await page.locator('[data-explorer-layer="site"]').click();
+    await page.locator('[data-explorer-layer="site"]').click();
+    await page.waitForFunction(() => window.__IRIS_APP__?.site?.group?.visible === false, null, { timeout: 5000 });
+    await page.locator('[data-explorer-layer="roof"]').click();
+    await page.locator('[data-explorer-layer="roof"]').click();
+    await page.waitForFunction(() => window.__IRIS_APP__?.buildingExplorer?.staticChildren?.every(({ object }) => object.visible === false), null, { timeout: 5000 });
+    await page.locator('[data-explorer-layer="glazing"]').click();
+    await page.waitForFunction(() => window.__IRIS_APP__?.buildingExplorer?.layerVisibility?.glazing === false, null, { timeout: 5000 });
+    assert(true, 'architectural layer toggles respect isolated-floor visibility rules');
+    await returnExterior();
+    await page.waitForFunction(() => {
+      const explorer = window.__IRIS_APP__?.buildingExplorer;
+      const records = explorer?.layerObjects?.get('glazing');
+      return explorer && !explorer.active && explorer.layerVisibility?.glazing === true &&
+        records?.length > 0 && records.every(({ object, visible }) => object.visible === visible);
+    }, null, { timeout: 5000 });
+    assert(true, 'returning to exterior restores every architectural layer to its default visibility');
+
+    await openFeature('journey');
+    await page.waitForFunction(() => window.__IRIS_APP__?.buildingExplorer?.active && window.__IRIS_APP__?.buildingExplorer?.mode === 'interior', null, { timeout: 25000 });
+    assert(await page.locator('#explorerRoomList button').count() >= 4, 'room-to-room journey exposes room destinations');
+    await returnExterior();
+
+    await openFeature('compare');
+    await page.locator('#irisComparePanel').waitFor({ state: 'visible' });
+    await page.locator('#irisCaptureA').click();
+    await page.waitForFunction(() => document.getElementById('irisCompareImageA')?.src.startsWith('data:image/png'));
+    await page.locator('[data-close-tool="compare"]').click();
+    await page.locator('#lightTool').evaluate((el) => { el.open = true; });
+    const compareSunBefore = await page.evaluate(() => {
+      const sun = window.__IRIS_APP__?.lightingController?.sun;
+      return sun ? { x: sun.position.x, y: sun.position.y, z: sun.position.z } : null;
+    });
+    await page.locator('#timeOfDay').evaluate((el) => {
+      el.value = '18';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    await page.waitForFunction((before) => {
+      const sun = window.__IRIS_APP__?.lightingController?.sun;
+      return before && sun && (Math.abs(sun.position.x - before.x) > 0.1 || Math.abs(sun.position.y - before.y) > 0.1 || Math.abs(sun.position.z - before.z) > 0.1);
+    }, compareSunBefore, { timeout: 5000 });
+    await openFeature('compare');
+    await page.locator('#irisComparePanel').waitFor({ state: 'visible' });
+    await page.locator('#irisCaptureB').click();
+    await page.waitForFunction(() => document.getElementById('irisCompareImageB')?.src.startsWith('data:image/png'));
+    const compareImagesDiffer = await page.evaluate(() => document.getElementById('irisCompareImageA')?.src !== document.getElementById('irisCompareImageB')?.src);
+    await page.locator('#irisCompareRange').evaluate((el) => {
+      el.value = '30';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    assert(compareImagesDiffer, 'comparison captures two distinct rendered views');
+    assert(await page.locator('#irisCompareStatus').textContent().then((s) => s.includes('Both views are ready')), 'comparison split control reflects both saved views');
+    await returnExterior();
+
+    await openFeature('postcard');
+    await page.locator('#irisPostcardPanel').waitFor({ state: 'visible' });
+    await page.locator('#irisPostcardHeading').fill('IRIS RESIDENCES TEST');
+    await page.locator('#irisCreatePostcard').click();
+    await page.waitForFunction(() => {
+      const image = document.getElementById('irisPostcardPreview');
+      const link = document.getElementById('irisDownloadPostcard');
+      return image && !image.hidden && image.src.startsWith('blob:') && link && !link.hidden && link.href.startsWith('blob:');
+    }, null, { timeout: 15000 });
+    const downloadWait = page.waitForEvent('download', { timeout: 10000 });
+    await page.locator('#irisDownloadPostcard').click();
+    const download = await downloadWait;
+    assert(download.suggestedFilename().endsWith('-postcard.png'), 'postcard generates and downloads a PNG');
+    await returnExterior();
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await menuButton.click();
+    assert(await page.locator('[data-feature]:visible').count() === 9, '390px mobile menu exposes all nine experiences');
+    await page.locator('#irisExperienceMenuClose').click();
+    let navFits = await page.evaluate(() => {
+      const button = document.getElementById('irisExperienceMenuButton').getBoundingClientRect();
+      const fullscreen = document.getElementById('fullscreenButton').getBoundingClientRect();
+      return button.left >= 0 && button.right <= window.innerWidth && fullscreen.left >= 0 && fullscreen.right <= window.innerWidth;
+    });
+    assert(navFits, 'main navigation remains within a 390px viewport');
+
+    await page.setViewportSize({ width: 320, height: 720 });
+    await menuButton.click();
+    assert(await page.locator('[data-feature]:visible').count() === 9, '320px compact mobile menu exposes all nine experiences');
+    await page.locator('#irisExperienceMenuClose').click();
+    navFits = await page.evaluate(() => {
+      const button = document.getElementById('irisExperienceMenuButton').getBoundingClientRect();
+      const fullscreen = document.getElementById('fullscreenButton').getBoundingClientRect();
+      return button.left >= 0 && button.right <= window.innerWidth && fullscreen.left >= 0 && fullscreen.right <= window.innerWidth;
+    });
+    assert(navFits, 'main navigation remains within a 320px compact viewport');
+    // Run the popup test last: opening/closing a second WebGL tab can alter
+    // focus or WebGL context state, and should not disturb the main-page suite.
+    await page.setViewportSize({ width: 1440, height: 960 });
+    await menuButton.click();
+    assert(await page.locator('[data-feature]').count() === 9, 'menu exposes all nine experiences');
+    const [liftPage] = await Promise.all([
+      page.waitForEvent('popup', { timeout: 10000 }),
+      page.locator('[data-feature="lifts"]').click()
+    ]);
+    const liftPageErrors = [];
+    liftPage.on('pageerror', (error) => {
+      liftPageErrors.push('pageerror: ' + error.message);
+      failures.push('Lift viewer: ' + error.message);
+    });
+    liftPage.on('console', (message) => {
+      if (message.type() === 'error') liftPageErrors.push('console: ' + message.text());
+    });
+    assert(new URL(liftPage.url()).pathname.endsWith('/lift-placement.html'), 'lift link opens the dedicated standalone viewer page');
+    await liftPage.waitForFunction(() => {
+      const root = document.getElementById('irisLiftViewer');
+      return Boolean(window.__IRIS_LIFT_VIEWER__?.ready || root?.dataset.state === 'error');
+    }, null, { timeout: 90000 });
+    const liftPageState = await liftPage.evaluate(() => ({
+      title: document.title,
+      url: location.href,
+      state: document.getElementById('irisLiftViewer')?.dataset.state || 'missing',
+      readyGlobal: Boolean(window.__IRIS_LIFT_VIEWER__?.ready),
+      rootHtml: document.getElementById('irisLiftViewer')?.outerHTML.slice(0, 700) || '',
+      bodyStart: document.body?.innerHTML.slice(0, 1100) || ''
+    }));
+    const liftViewerState = liftPageState.state;
+    if (liftViewerState !== 'ready') {
+      throw new Error('Lift viewer startup diagnostic=' + JSON.stringify(liftPageState) + '; browser errors=' + liftPageErrors.join(' | '));
+    }
+    assert((await liftPage.title()).includes('Lift Placement Viewer'), 'lift viewer opens in a separate browser tab');
+    assert(await liftPage.locator('#irisLiftPlan svg').count() === 1, 'conceptual 2D floor plan renders beside the 3D view');
+    await liftPage.locator('#irisLiftFloorSelect').selectOption('3');
+    assert(await liftPage.evaluate(() => window.__IRIS_LIFT_VIEWER__?.selectedFloor === 3), 'floor selector updates the selected level');
+    await liftPage.locator('[data-lift-choice="LIFT-B"]').click();
+    assert(await liftPage.evaluate(() => window.__IRIS_LIFT_VIEWER__?.selectedLiftId === 'LIFT-B'), 'individual lift can be selected');
+    await liftPage.locator('[data-lift-layout="plan"]').click();
+    assert(await liftPage.evaluate(() => window.__IRIS_LIFT_VIEWER__?.layout === 'plan'), '2D plan-only layout control works');
+    assert(await page.evaluate(() => Boolean(window.__IRIS_APP__?.ready) && !document.documentElement.classList.contains('lift-view-mode')), 'original exterior remains active in original tab');
+    await liftPage.close();
+
+    assert(failures.length === 0, 'no unhandled browser JavaScript errors (' + failures.length + ')');
+    console.log('All IRIS experience browser checks passed.');
+  } finally {
+    await browser.close();
+  }
+})().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
