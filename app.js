@@ -812,13 +812,37 @@ function bindEvents() {
     timeOfDay.addEventListener('change', () => applyTime(true));
   }
 
-  // Direct manipulation always takes priority over a running guided tour.
+  // Direct manipulation stops the guided tour and temporarily compacts the header
+  // so the building remains the focus. Restore after a short idle period.
+  let headerRestoreTimer = 0;
+  const compactHeaderDuringInteraction = () => {
+    document.body.classList.add('is-header-compact');
+    window.clearTimeout(headerRestoreTimer);
+    headerRestoreTimer = window.setTimeout(() => {
+      document.body.classList.remove('is-header-compact');
+    }, 1800);
+  };
+  const restoreHeaderAfterInteraction = () => {
+    window.clearTimeout(headerRestoreTimer);
+    headerRestoreTimer = window.setTimeout(() => {
+      document.body.classList.remove('is-header-compact');
+    }, 1800);
+  };
+
   renderer.domElement.addEventListener('pointerdown', () => {
+    compactHeaderDuringInteraction();
     if (guidedTour?.active) guidedTour.stop({ reason: 'manual' });
   }, { capture: true });
+  renderer.domElement.addEventListener('pointermove', (event) => {
+    if (event.buttons) compactHeaderDuringInteraction();
+  }, { passive: true });
+  renderer.domElement.addEventListener('pointerup', restoreHeaderAfterInteraction, { passive: true });
+  renderer.domElement.addEventListener('pointercancel', restoreHeaderAfterInteraction, { passive: true });
   renderer.domElement.addEventListener('wheel', () => {
+    compactHeaderDuringInteraction();
     if (guidedTour?.active) guidedTour.stop({ reason: 'manual' });
   }, { capture: true, passive: true });
+  renderer.domElement.addEventListener('keydown', compactHeaderDuringInteraction);
 
   renderer.domElement.addEventListener('webglcontextlost', (event) => {
     event.preventDefault();
