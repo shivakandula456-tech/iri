@@ -67,7 +67,7 @@ Open **Explore IRIS** in the top navigation to find all eight options in one res
 2. **Blueprint-to-Apartment Morph** — transition from the architectural edge view into the illustrative apartment walkthrough.
 3. **Sunlight & Shadow Explorer** — change the time-of-day control to move the conceptual sun direction, update lighting and refresh the scene shadow map. It is a visual study, not location-calibrated solar analysis.
 4. **Seamless Building Portal** — enter the sample apartment directly from the exterior.
-5. **Architectural Layer Explorer** — open IRIS Inside with X-ray, floor isolation, selected-floor cutaway and exploded-tower controls.
+5. **Architectural Layer Explorer** — toggle conceptual facade/massing, glazing, metal/bronze details, balustrades, roof/crown/podium grouping, and site/landscape, alongside X-ray, floor isolation, cutaway and exploded-tower controls. Material groupings are inferred from the procedural model and are not architect-issued construction layers.
 6. **Room-to-Room Journey** — enter the apartment and navigate by the room list or conceptual plan.
 7. **Live Visual Comparison** — save two canvas snapshots and compare them using a movable split divider.
 8. **Architectural Postcard Studio** — add a title and caption to the rendered view, preview it, and download a PNG.
