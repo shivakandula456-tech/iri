@@ -57,21 +57,20 @@ export class QualityController {
     };
   }
 
-  _targetPixelRatio() {
+  _targetPixelRatio(width, height) {
     if (this.mode === 'high') return this.maxDpr;
     if (this.mode === 'low') {
       return Math.max(MIN_PIXEL_RATIO, Math.min(this.maxDpr, 0.8));
     }
-    const width = Math.max(1, window.innerWidth);
-    const height = Math.max(1, window.innerHeight);
     const budgetRatio = Math.sqrt(PIXEL_BUDGETS[this.level] / (width * height));
     return Math.max(MIN_PIXEL_RATIO, Math.min(this.maxDpr, budgetRatio));
   }
 
-  resize() {
-    const width = Math.max(1, window.innerWidth);
-    const height = Math.max(1, window.innerHeight);
-    const ratio = this._targetPixelRatio();
+  resize(requestedWidth, requestedHeight) {
+    const shellRect = document.getElementById('app')?.getBoundingClientRect();
+    const width = Math.max(1, Math.round(requestedWidth || shellRect?.width || window.visualViewport?.width || document.documentElement.clientWidth || window.innerWidth));
+    const height = Math.max(1, Math.round(requestedHeight || shellRect?.height || window.visualViewport?.height || document.documentElement.clientHeight || window.innerHeight));
+    const ratio = this._targetPixelRatio(width, height);
     const changed = Math.abs(ratio - this.pixelRatio) > 0.001;
 
     this.pixelRatio = ratio;
