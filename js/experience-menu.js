@@ -311,10 +311,10 @@ async function createPostcard() {
     context.textBaseline = 'alphabetic';
     context.fillStyle = '#d3b07c';
     context.font = '600 ' + Math.max(12, Math.round(w * 0.012)) + 'px Arial, sans-serif';
-    context.fillText('ARCHITECTURAL VISUAL STUDY', margin, h - margin - Math.max(46, h * 0.085));
+    context.fillText('ARCHITECTURAL VISUAL STUDY', margin, h - margin - Math.max(82, Math.round(h * 0.12)));
     context.fillStyle = '#f2eee3';
     context.font = '400 ' + Math.max(24, Math.round(w * 0.038)) + 'px Georgia, serif';
-    context.fillText(title || 'IRIS RESIDENCES', margin, h - margin - Math.max(17, h * 0.045));
+    context.fillText(title || 'IRIS RESIDENCES', margin, h - margin - Math.max(27, Math.round(h * 0.055)));
     context.fillStyle = 'rgba(242,238,227,.82)';
     context.font = '400 ' + Math.max(12, Math.round(w * 0.014)) + 'px Arial, sans-serif';
     context.fillText(caption || 'Anandtara · Mundhwa, Pune', margin, h - Math.max(10, Math.round(margin * 0.55)));
