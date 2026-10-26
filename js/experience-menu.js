@@ -14,12 +14,14 @@ const FEATURES = [
   { id: 'layers', number: '05', title: 'Architectural Layer Explorer', detail: 'Inspect facade, floor isolation, cutaway and exploded views.' },
   { id: 'journey', number: '06', title: 'Room-to-Room Journey', detail: 'Navigate the sample apartment and choose rooms from its plan.' },
   { id: 'compare', number: '07', title: 'Live Visual Comparison', detail: 'Save two scene views and compare them with a movable split line.' },
-  { id: 'postcard', number: '08', title: 'Architectural Postcard Studio', detail: 'Frame the current view, add a title, and export a PNG image.' }
+  { id: 'postcard', number: '08', title: 'Architectural Postcard Studio', detail: 'Frame the current view, add a title, and export a PNG image.' },
+  { id: 'lifts', number: '09', title: 'Lift Placement Viewer', detail: 'Inspect conceptual lift shafts in a 3D cutaway and matching 2D floor plans in a separate tab.' }
 ];
 
 const style = document.createElement('style');
 style.textContent = `
 .iris-experience-trigger { border-color: rgba(211,176,124,.45) !important; color: var(--ivory) !important; }
+.iris-experience-card[href] { text-decoration:none; }
 .iris-experience-trigger svg { fill:none; stroke:currentColor; stroke-width:1.55; stroke-linecap:round; stroke-linejoin:round; }
 .iris-experience-trigger[disabled] { opacity:.48; cursor:wait; }
 .iris-experience-scrim { position:fixed; inset:0; z-index:78; background:rgba(3,8,11,.32); backdrop-filter:blur(2px); }
@@ -85,7 +87,7 @@ trigger.className = 'top-button iris-experience-trigger';
 trigger.setAttribute('aria-haspopup', 'dialog');
 trigger.setAttribute('aria-expanded', 'false');
 trigger.setAttribute('aria-controls', 'irisExperienceMenu');
-trigger.title = 'Open all eight immersive experiences';
+trigger.title = 'Open all nine immersive experiences';
 trigger.disabled = true;
 trigger.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg><span>Explore IRIS</span>';
 const fullscreen = byId('fullscreenButton');
@@ -125,8 +127,15 @@ while (wrap.firstChild) ROOT.appendChild(wrap.firstChild);
 
 const grid = byId('irisExperienceGrid');
 for (const feature of FEATURES) {
-  const button = document.createElement('button');
-  button.type = 'button';
+  const button = document.createElement(feature.id === 'lifts' ? 'a' : 'button');
+  if (feature.id === 'lifts') {
+    button.href = new URL('./index.html?view=lift-placement', window.location.href).href;
+    button.target = '_blank';
+    button.rel = 'noopener noreferrer';
+    button.setAttribute('aria-label', 'Open Lift Placement Viewer in a new browser tab');
+  } else {
+    button.type = 'button';
+  }
   button.className = 'iris-experience-card';
   button.dataset.feature = feature.id;
   button.innerHTML =
@@ -425,7 +434,13 @@ byId('irisExperienceMenuClose').addEventListener('click', hideMenu);
 scrim.addEventListener('click', hideMenu);
 menu.addEventListener('click', (event) => {
   const button = event.target.closest('[data-feature]');
-  if (button) runFeature(button.dataset.feature);
+  if (!button) return;
+  if (button.dataset.feature === 'lifts') {
+    // Keep the new-tab navigation native and synchronous for popup-blocker compatibility.
+    hideMenu();
+    return;
+  }
+  runFeature(button.dataset.feature);
 });
 byId('irisReturnExterior').addEventListener('click', async () => {
   try {

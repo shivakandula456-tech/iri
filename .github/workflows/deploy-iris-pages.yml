@@ -58,7 +58,7 @@ jobs:
           duplicates = sorted(key for key, count in Counter(parser.ids).items() if count > 1)
           if duplicates:
               raise SystemExit('Duplicate HTML ids: ' + ', '.join(duplicates))
-          required = ['app.js', 'styles.css', 'js/experience-menu.js', 'js/building-explorer.js']
+          required = ['app.js', 'styles.css', 'js/experience-menu.js', 'js/building-explorer.js', 'js/lift-data.js', 'js/lift-placement-viewer.js']
           missing = [path for path in required if not Path(path).is_file()]
           if missing:
               raise SystemExit('Missing required files: ' + ', '.join(missing))
@@ -125,6 +125,8 @@ jobs:
           site="${DEPLOY_URL%/}/"
           index_file=/tmp/iris-published-index.html
           menu_file=/tmp/iris-published-menu.js
+          lift_file=/tmp/iris-published-lift-viewer.js
+          lift_data_file=/tmp/iris-published-lift-data.js
           published=false
           for attempt in $(seq 1 30); do
             if curl -fsS "${site}index.html" -o "$index_file"; then
@@ -138,5 +140,10 @@ jobs:
           curl -fsS "${site}js/experience-menu.js" -o "$menu_file"
           grep -q 'Vertical Building Cutaway' "$menu_file"
           grep -q 'Architectural Postcard Studio' "$menu_file"
-          echo "Published index and all-eight-options menu are reachable at ${site}"
+          grep -q 'Lift Placement Viewer' "$menu_file"
+          curl -fsS "${site}js/lift-placement-viewer.js" -o "$lift_file"
+          curl -fsS "${site}js/lift-data.js" -o "$lift_data_file"
+          grep -q 'IRIS Residences · Lift Placement Viewer' "$lift_file"
+          grep -q 'LIFT-A' "$lift_data_file"
+          echo "Published index, nine-experience menu and lift viewer assets are reachable at ${site}"
 

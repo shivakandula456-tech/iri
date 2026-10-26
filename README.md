@@ -34,7 +34,7 @@ Then open `http://localhost:8000/`. This is not an application backend and is no
 
 ## Deploy to GitHub Pages
 
-The workflow `.github/workflows/deploy-iris-pages.yml` runs on every push to `feature/immersive-architectural-experience` and can also be started manually from the Actions tab. It checks JavaScript syntax, required files, duplicate HTML IDs and runs Playwright browser smoke tests for the eight menu options. The deployment job publishes the static site only when verification succeeds. If several pushes arrive close together, older in-progress runs are cancelled so the newest branch state is the version published.
+The workflow `.github/workflows/deploy-iris-pages.yml` runs on every push to `feature/immersive-architectural-experience` and can also be started manually from the Actions tab. It checks JavaScript syntax, required files, duplicate HTML IDs and runs Playwright browser smoke tests for all nine menu experiences, including the Lift Placement Viewer. The deployment job publishes the static site only when verification succeeds. If several pushes arrive close together, older in-progress runs are cancelled so the newest branch state is the version published.
 
 **One-time GitHub setting:** open repository **Settings → Pages → Build and deployment → Source** and select **GitHub Actions**. If the existing Pages deployment environment has branch restrictions, allow `feature/immersive-architectural-experience` to deploy. Without this setting or permission, the workflow can run but Pages deployment may fail.
 
@@ -97,3 +97,8 @@ The `feature/immersive-architectural-experience` branch adds the guided tour and
 ## Current verification status
 
 The GitHub Actions workflow now runs repeatable source checks and automated Playwright browser smoke tests before publishing from the feature branch. Review the latest run under the repository **Actions** tab. Do not treat a run as passed until its verification job succeeds and the deployment job completes. The in-chat environment has not independently completed a live WebGL browser session, so local/static checks are not a substitute for the Actions browser run. Use `docs/testing-checklist.md` for additional manual desktop and mobile acceptance tests.
+
+
+## Lift Placement Viewer
+
+Open **Explore IRIS → Lift Placement Viewer** to launch a separate browser tab containing the shared 3D vertical cutaway and a schematic 2D floor plan. Initial lift locations, dimensions, door orientation and served-floor pattern are placeholders in `js/lift-data.js`; verify them against approved plans and lift sections before using project-specific dimensions. This is a conceptual visual study and is not for construction.

@@ -53,8 +53,23 @@ const assert = (condition, message) => {
     };
 
     await menuButton.click();
-    assert(await page.locator('[data-feature]').count() === 8, 'menu exposes all eight experiences');
-    await page.locator('#irisExperienceMenuClose').click();
+    assert(await page.locator('[data-feature]').count() === 9, 'menu exposes all nine experiences');
+    const [liftPage] = await Promise.all([
+      page.waitForEvent('popup', { timeout: 10000 }),
+      page.locator('[data-feature="lifts"]').click()
+    ]);
+    liftPage.on('pageerror', (error) => failures.push('Lift viewer: ' + error.message));
+    await liftPage.waitForFunction(() => Boolean(window.__IRIS_LIFT_VIEWER__?.ready), null, { timeout: 60000 });
+    assert((await liftPage.title()).includes('Lift Placement Viewer'), 'lift viewer opens in a separate browser tab');
+    assert(await liftPage.locator('#irisLiftPlan svg').count() === 1, 'conceptual 2D floor plan renders beside the 3D view');
+    await liftPage.locator('#irisLiftFloorSelect').selectOption('3');
+    assert(await liftPage.evaluate(() => window.__IRIS_LIFT_VIEWER__?.selectedFloor === 3), 'floor selector updates the selected level');
+    await liftPage.locator('[data-lift-choice="LIFT-B"]').click();
+    assert(await liftPage.evaluate(() => window.__IRIS_LIFT_VIEWER__?.selectedLiftId === 'LIFT-B'), 'individual lift can be selected');
+    await liftPage.locator('[data-lift-layout="plan"]').click();
+    assert(await liftPage.evaluate(() => window.__IRIS_LIFT_VIEWER__?.layout === 'plan'), '2D plan-only layout control works');
+    assert(await page.evaluate(() => Boolean(window.__IRIS_APP__?.ready) && !document.documentElement.classList.contains('lift-view-mode')), 'original exterior remains active in original tab');
+    await liftPage.close();
 
     await openFeature('cutaway');
     await waitForExplorerMode('vertical');
@@ -227,7 +242,7 @@ const assert = (condition, message) => {
 
     await page.setViewportSize({ width: 390, height: 844 });
     await menuButton.click();
-    assert(await page.locator('[data-feature]:visible').count() === 8, '390px mobile menu exposes all eight experiences');
+    assert(await page.locator('[data-feature]:visible').count() === 9, '390px mobile menu exposes all nine experiences');
     await page.locator('#irisExperienceMenuClose').click();
     let navFits = await page.evaluate(() => {
       const button = document.getElementById('irisExperienceMenuButton').getBoundingClientRect();
@@ -238,7 +253,7 @@ const assert = (condition, message) => {
 
     await page.setViewportSize({ width: 320, height: 720 });
     await menuButton.click();
-    assert(await page.locator('[data-feature]:visible').count() === 8, '320px compact mobile menu exposes all eight experiences');
+    assert(await page.locator('[data-feature]:visible').count() === 9, '320px compact mobile menu exposes all nine experiences');
     await page.locator('#irisExperienceMenuClose').click();
     navFits = await page.evaluate(() => {
       const button = document.getElementById('irisExperienceMenuButton').getBoundingClientRect();

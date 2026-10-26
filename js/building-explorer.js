@@ -556,15 +556,11 @@ export class BuildingExplorer {
 
   close() {
     if (!this.active) return;
-    if (this.flight) {
-      this.flight = null;
-      this.controls.enabled = true;
-    }
+    // Restore the exterior immediately, even if another camera flight was interrupted.
+    this.flight = null;
     this.walking = false;
     this.heldKeys.clear();
     this.rotateEnabled = false;
-    // Never let an inspection-only layer toggle leak into the public exterior.
-    // Closing the explorer should always restore the complete default model.
     this.layerVisibility = {
       massing: true, floorPlates: true, glazing: true,
       metalwork: true, balustrades: true, roof: true, site: true
@@ -572,26 +568,20 @@ export class BuildingExplorer {
     this.mode = 'exterior';
     this._applyVisualMode();
     const saved = this.savedExterior;
-    if (!saved) {
-      this.active = false;
-      this.floorHighlight.visible = false;
-      this._emitState();
-      return;
-    }
-    this._flyTo(saved.position, saved.target, 1050, 0.8, () => {
+    if (saved) {
       this.camera.position.copy(saved.position);
       this.controls.target.copy(saved.target);
       this.camera.lookAt(saved.target);
       this.controls.minDistance = saved.minDistance;
       this.controls.maxDistance = saved.maxDistance;
-      this.controls.enabled = saved.enabled;
       if (this.site?.group) this.site.group.visible = saved.siteVisible;
-      this.active = false;
-      this.floorHighlight.visible = false;
-      this.flight = null;
-      this.savedExterior = null;
-      this._emitState();
-    });
+      this.controls.enabled = saved.enabled;
+    } else {
+      this.controls.enabled = true;
+    }
+    this.active = false;
+    this.floorHighlight.visible = false;
+    this.savedExterior = null;
     this._emitState();
   }
 
