@@ -59,6 +59,12 @@ const assert = (condition, message) => {
     await openFeature('cutaway');
     await waitForExplorerMode('vertical');
     assert(await page.locator('#explorerCutControl').isVisible(), 'vertical cutaway opens the full-tower cut-plane controls');
+    await page.locator('#explorerCutDepth').evaluate((el) => {
+      el.value = '3.4';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await page.waitForFunction(() => Math.abs((window.__IRIS_APP__?.buildingExplorer?.cutDepth || 0) - 3.4) < 0.01, null, { timeout: 5000 });
+    assert(true, 'vertical cutaway slider updates the live clipping plane');
     await returnExterior();
 
     await openFeature('blueprint');
