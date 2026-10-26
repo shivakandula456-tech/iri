@@ -90,6 +90,12 @@ const assert = (condition, message) => {
     await openFeature('layers');
     await waitForExplorerMode('xray');
     assert(await page.locator('#explorerFloorRail').isVisible(), 'architectural layer option opens floor and layer controls');
+    assert(await page.locator('[data-explorer-layer]').count() === 6, 'architectural layer explorer exposes six layer groups');
+    await page.locator('[data-explorer-layer="glazing"]').click();
+    await page.waitForFunction(() => window.__IRIS_APP__?.buildingExplorer?.layerVisibility?.glazing === false, null, { timeout: 5000 });
+    assert(await page.locator('[data-explorer-layer="glazing"]').getAttribute('aria-pressed') === 'false', 'glazing visibility toggle updates the model state');
+    await page.locator('[data-explorer-layer="glazing"]').click();
+    await page.waitForFunction(() => window.__IRIS_APP__?.buildingExplorer?.layerVisibility?.glazing === true, null, { timeout: 5000 });
     await returnExterior();
 
     await openFeature('journey');
