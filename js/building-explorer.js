@@ -681,14 +681,19 @@ export class BuildingExplorer {
   }
 
   _applyLayerVisibility() {
-    for (const [layer, records] of this.layerObjects) {
-      const enabled = this.layerVisibility[layer] !== false;
-      for (const { object, visible } of records) object.visible = visible && enabled;
-    }
     // Non-floor batches are the procedural roof/crown, podium and entrance
-    // elements; keep this toggle's label explicit about that combined grouping.
+    // elements. Apply the roof switch first, then intersect it with the
+    // material-category switch so one control cannot accidentally re-enable
+    // an object hidden by another control.
+    const nonFloorObjects = new Set(this.staticChildren.map(({ object }) => object));
     for (const { object, visible } of this.staticChildren) {
       object.visible = visible && this.layerVisibility.roof !== false;
+    }
+    for (const [layer, records] of this.layerObjects) {
+      const enabled = this.layerVisibility[layer] !== false;
+      for (const { object, visible } of records) {
+        object.visible = visible && enabled && (!nonFloorObjects.has(object) || this.layerVisibility.roof !== false);
+      }
     }
     if (this.site?.group) {
       this.site.group.visible = this.siteInitialVisibility && this.layerVisibility.site !== false;
