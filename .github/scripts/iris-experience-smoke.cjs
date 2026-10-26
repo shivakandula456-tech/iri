@@ -147,8 +147,17 @@ const assert = (condition, message) => {
     await page.locator('[data-explorer-layer="roof"]').click();
     await page.locator('[data-explorer-layer="roof"]').click();
     await page.waitForFunction(() => window.__IRIS_APP__?.buildingExplorer?.staticChildren?.every(({ object }) => object.visible === false), null, { timeout: 5000 });
+    await page.locator('[data-explorer-layer="glazing"]').click();
+    await page.waitForFunction(() => window.__IRIS_APP__?.buildingExplorer?.layerVisibility?.glazing === false, null, { timeout: 5000 });
     assert(true, 'architectural layer toggles respect isolated-floor visibility rules');
     await returnExterior();
+    await page.waitForFunction(() => {
+      const explorer = window.__IRIS_APP__?.buildingExplorer;
+      const records = explorer?.layerObjects?.get('glazing');
+      return explorer && !explorer.active && explorer.layerVisibility?.glazing === true &&
+        records?.length > 0 && records.every(({ object, visible }) => object.visible === visible);
+    }, null, { timeout: 5000 });
+    assert(true, 'returning to exterior restores every architectural layer to its default visibility');
 
     await openFeature('journey');
     await page.waitForFunction(() => window.__IRIS_APP__?.buildingExplorer?.active && window.__IRIS_APP__?.buildingExplorer?.mode === 'interior', null, { timeout: 25000 });
