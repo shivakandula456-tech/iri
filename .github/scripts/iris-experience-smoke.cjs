@@ -100,8 +100,12 @@ const assert = (condition, message) => {
     await returnExterior();
 
     await openFeature('portal');
-    await page.waitForFunction(() => window.__IRIS_APP__?.buildingExplorer?.active && window.__IRIS_APP__?.buildingExplorer?.mode === 'interior', null, { timeout: 25000 });
-    assert(await page.locator('#explorerWalkControls').isVisible(), 'building portal enters the apartment walkthrough');
+    await page.waitForFunction(() => {
+      const explorer = window.__IRIS_APP__?.buildingExplorer;
+      return explorer?.active && explorer.mode === 'interior' && explorer.walking === true;
+    }, null, { timeout: 25000 });
+    await page.locator('#explorerWalkControls').waitFor({ state: 'visible', timeout: 5000 });
+    assert(true, 'building portal enters the apartment walkthrough');
     await returnExterior();
 
     await openFeature('layers');
