@@ -321,6 +321,23 @@
         <button id="explorerFloorMode" type="button" data-explorer-mode="floor" aria-pressed="false">Isolate floor</button>
         <button id="explorerExplodedMode" type="button" data-explorer-mode="exploded" aria-pressed="false">Explode tower</button>
       </div>
+      <section class="explorer-layer-section" aria-labelledby="explorerLayerTitle">
+        <div class="explorer-section-heading">
+          <div>
+            <span class="explorer-kicker">MODEL LAYERS · CONCEPTUAL</span>
+            <h3 id="explorerLayerTitle">Architectural layers</h3>
+          </div>
+        </div>
+        <p class="explorer-plan-note">Toggle inferred model groups. Shared materials mean some components are grouped together; these are not verified construction layers.</p>
+        <div class="explorer-mode-grid explorer-layer-grid" role="group" aria-label="Toggle architectural model layers">
+          <button type="button" data-explorer-layer="massing" data-layer-label="Facade & massing" aria-pressed="true">Facade &amp; massing · On</button>
+          <button type="button" data-explorer-layer="glazing" data-layer-label="Glazing & windows" aria-pressed="true">Glazing &amp; windows · On</button>
+          <button type="button" data-explorer-layer="metalwork" data-layer-label="Metal / bronze details" aria-pressed="true">Metal / bronze details · On</button>
+          <button type="button" data-explorer-layer="balustrades" data-layer-label="Balustrades" aria-pressed="true">Balustrades · On</button>
+          <button type="button" data-explorer-layer="roof" data-layer-label="Roof / crown / podium" aria-pressed="true">Roof / crown / podium · On</button>
+          <button type="button" data-explorer-layer="site" data-layer-label="Site & landscape" aria-pressed="true">Site &amp; landscape · On</button>
+        </div>
+      </section>
       <div id="explorerCutControl" class="explorer-cut-control" hidden>
         <label for="explorerCutDepth">
           <span>Cut plane depth</span>
