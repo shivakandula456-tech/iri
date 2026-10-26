@@ -126,6 +126,10 @@ const assert = (condition, message) => {
     await page.waitForFunction(() => document.getElementById('irisCompareImageA')?.src.startsWith('data:image/png'));
     await page.locator('[data-close-tool="compare"]').click();
     await page.locator('#lightTool').evaluate((el) => { el.open = true; });
+    const compareSunBefore = await page.evaluate(() => {
+      const sun = window.__IRIS_APP__?.lightingController?.sun;
+      return sun ? { x: sun.position.x, y: sun.position.y, z: sun.position.z } : null;
+    });
     await page.locator('#timeOfDay').evaluate((el) => {
       el.value = '18';
       el.dispatchEvent(new Event('input', { bubbles: true }));
@@ -134,7 +138,7 @@ const assert = (condition, message) => {
     await page.waitForFunction((before) => {
       const sun = window.__IRIS_APP__?.lightingController?.sun;
       return before && sun && (Math.abs(sun.position.x - before.x) > 0.1 || Math.abs(sun.position.y - before.y) > 0.1 || Math.abs(sun.position.z - before.z) > 0.1);
-    }, { x: 0, y: 0, z: 0 }, { timeout: 5000 }).catch(() => {});
+    }, compareSunBefore, { timeout: 5000 });
     await openFeature('compare');
     await page.locator('#irisComparePanel').waitFor({ state: 'visible' });
     await page.locator('#irisCaptureB').click();
