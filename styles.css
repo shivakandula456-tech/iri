@@ -2725,3 +2725,92 @@ html, body {
   .preset-rail { max-width: 70vw; }
   .director-panel { max-height: 42dvh; overflow-y: auto; }
 }
+
+
+/* IRIS header refinement: keep all nine navigation controls and Atmosphere
+   on one coordinated desktop row. At narrower widths Atmosphere gets its own
+   right-aligned row so the nav remains scrollable and legible. */
+@media (min-width: 1400px) {
+  .topbar .top-actions {
+    align-self: flex-start;
+    flex: 0 0 auto;
+    width: calc(100% - clamp(310px, 22vw, 370px) - 12px);
+    max-width: calc(100% - clamp(310px, 22vw, 370px) - 12px);
+    justify-content: space-between;
+    gap: clamp(5px, 0.45vw, 8px);
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .topbar .top-button {
+    padding-left: clamp(7px, 0.58vw, 10px);
+    padding-right: clamp(7px, 0.58vw, 10px);
+    gap: 5px;
+    font-size: clamp(8px, 0.54vw, 9px);
+  }
+
+  .light-tool {
+    top: calc(12px + var(--safe-top));
+    right: clamp(18px, 3.2vw, 44px);
+    width: clamp(310px, 22vw, 370px);
+    max-width: calc(100vw - 32px);
+  }
+
+  body.is-header-compact .light-tool {
+    top: calc(6px + var(--safe-top));
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1399px) {
+  .topbar .top-actions {
+    align-self: stretch;
+    width: 100%;
+    max-width: 100%;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  .light-tool {
+    top: calc(60px + var(--safe-top));
+    right: max(14px, var(--safe-right));
+    width: min(370px, calc(100vw - 28px));
+  }
+
+  .topbar .brand {
+    margin-top: 58px;
+  }
+}
+
+@media (max-width: 760px) {
+  .topbar .top-actions {
+    align-self: stretch;
+    width: 100%;
+    max-width: 100%;
+    justify-content: flex-start;
+    gap: 5px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .light-tool {
+    top: calc(54px + var(--safe-top));
+    right: max(10px, var(--safe-right));
+    width: min(360px, calc(100vw - 20px - var(--safe-left) - var(--safe-right)));
+  }
+
+  .topbar .brand {
+    margin-top: 44px;
+  }
+}
+
+@media (max-width: 480px) {
+  .light-tool {
+    top: calc(54px + var(--safe-top));
+    right: max(8px, var(--safe-right));
+    width: min(360px, calc(100vw - 16px - var(--safe-left) - var(--safe-right)));
+  }
+
+  .topbar .brand {
+    margin-top: 44px;
+  }
+}
