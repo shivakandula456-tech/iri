@@ -2440,7 +2440,11 @@ body.is-building-explorer .top-actions .explore-floors-button span {
 .topbar .top-actions {
   order: 0;
   display: flex;
-  flex: 0 0 auto;
+  flex: 1 1 100%;
+  align-self: stretch;
+  box-sizing: border-box;
+  margin-left: 0;
+  margin-right: 0;
   align-items: center;
   justify-content: space-between;
   flex-wrap: nowrap;
