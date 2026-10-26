@@ -66,7 +66,7 @@ The test environment returned `ERR_BLOCKED_BY_ADMINISTRATOR` for navigation to b
 
 ## Release gate
 
-Do not mark this concept acceptance-complete until tests A–AL have been exercised in the automated feature-branch workflow and the desktop/mobile checks that require human visual judgment have also passed. Investigate all failures, fix the actual defect, and repeat the affected tests. Save current screenshots and final browser-console/network notes under `docs/evidence/` after the visual acceptance pass.
+Do not mark this concept acceptance-complete until tests A–AN have been exercised in the automated feature-branch workflow and the desktop/mobile checks that require human visual judgment have also passed. Investigate all failures, fix the actual defect, and repeat the affected tests. Save current screenshots and final browser-console/network notes under `docs/evidence/` after the visual acceptance pass.
 
 
 ## Detailed feature tests for the immersive branch
@@ -143,7 +143,7 @@ Do not mark this concept acceptance-complete until tests A–AL have been exerci
 |---|---|---|---|
 | AG | Unified menu | The Explore IRIS button opens a panel with exactly eight feature cards; close button, scrim and Escape close it; the menu can reopen without duplicating controls | Pending — CI browser test |
 | AH | Full-tower vertical cutaway | Vertical tower cutaway clips the whole modeled tower, shows illustrative floor plates, and exposes the live cut-plane slider; moving the slider changes `buildingExplorer.cutDepth` continuously; selected-floor cutaway still affects only the selected floor | Pending — CI browser test |
-| AI | Architectural layer visibility | Facade/massing, glazing, metal/bronze, balustrades, roof/crown/podium, and site/landscape toggles change visibility, keep their states synchronized with the buttons, and do not override another active layer filter | Pending — CI browser test |
+| AI | Architectural layer visibility | Facade/massing, conceptual floor plates, glazing, metal/bronze, balustrades, roof/crown/podium, and site/landscape toggles change visibility, keep their states synchronized with the buttons, and do not override another active layer filter | Pending — CI browser test |
 | AJ | Blueprint-to-apartment journey | Blueprint transition appears, then the viewer enters the sample apartment; repeated use does not leave Blueprint enabled or trap camera controls | Pending — CI browser test |
 | AK | Live visual comparison | Capturing view A and view B produces valid images, and moving the split slider changes the displayed boundary; clearing views returns to the empty prompt | Pending — CI browser test |
 | AL | Postcard export | Capture produces a preview and a downloadable PNG with a title and caption; closing/reopening the panel does not retain revoked blob URLs | Pending — CI browser test |
