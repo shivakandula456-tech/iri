@@ -67,10 +67,13 @@ jobs:
           print(f'HTML ids unique ({len(parser.ids)} ids); required files present.')
           PY
 
-      - name: Install Playwright and Chromium
+      - name: Install Playwright
         run: |
           npm install --prefix /tmp/iris-playwright --no-save --no-package-lock --no-audit --no-fund playwright
-          /tmp/iris-playwright/node_modules/.bin/playwright install --with-deps chromium
+
+      - name: Download Chromium for Playwright
+        run: |
+          /tmp/iris-playwright/node_modules/.bin/playwright install chromium
 
       - name: Run desktop and mobile feature smoke tests
         env:
