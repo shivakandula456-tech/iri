@@ -171,6 +171,16 @@ function closeToolPanels() {
     URL.revokeObjectURL(postcardObjectUrl);
     postcardObjectUrl = '';
   }
+  const preview = byId('irisPostcardPreview');
+  if (preview) {
+    preview.hidden = true;
+    preview.removeAttribute('src');
+  }
+  const download = byId('irisDownloadPostcard');
+  if (download) {
+    download.hidden = true;
+    download.removeAttribute('href');
+  }
 }
 function showToolPanel(name) {
   hideMenu();
@@ -319,7 +329,7 @@ async function createPostcard() {
     download.download = slug + '-postcard.png';
     download.hidden = false;
     status.textContent = 'Postcard ready. Preview it here or use Download PNG.';
-    download.click();
+    // Keep the download behind an explicit user click for browser compatibility.
   } catch (error) {
     status.textContent = error.message || 'Postcard export failed. Please retry.';
   } finally {
