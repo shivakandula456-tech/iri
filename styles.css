@@ -2422,3 +2422,149 @@ body.is-building-explorer .top-actions .explore-floors-button span {
     font-size: 9px;
   }
 }
+
+
+/* Approved IRIS header refinement: separate branding and navigation rows.
+   All original logo artwork, tab labels, icons and controls remain intact. */
+.topbar {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 13px;
+  padding: calc(18px + var(--safe-top)) clamp(18px, 3.2vw, 44px) 0;
+  transition: padding 260ms ease, gap 260ms ease, opacity 500ms ease;
+}
+
+.topbar .brand {
+  align-self: flex-start;
+  min-height: 42px;
+  max-width: 100%;
+}
+
+.topbar .top-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  width: 100%;
+  min-width: 0;
+}
+
+.topbar .top-button {
+  flex: 0 0 auto;
+}
+
+body.is-header-compact .topbar {
+  gap: 6px;
+  padding-top: calc(8px + var(--safe-top));
+}
+
+body.is-header-compact .brand-meta {
+  display: none;
+}
+
+body.is-header-compact .brand-mark {
+  width: 32px;
+  height: 32px;
+}
+
+body.is-header-compact .brand-name {
+  font-size: 17px;
+}
+
+body.is-header-compact .topbar .top-button {
+  height: 31px;
+  padding-right: 10px;
+  padding-left: 10px;
+  font-size: 8px;
+  gap: 6px;
+}
+
+body.is-header-compact .topbar .top-button svg {
+  width: 13px;
+  height: 13px;
+}
+
+body.is-header-compact .topbar .top-actions {
+  gap: 5px;
+}
+
+@media (max-width: 760px) {
+  .topbar {
+    gap: 9px;
+    padding: calc(12px + var(--safe-top)) 12px 0;
+  }
+
+  .topbar .brand {
+    gap: 9px;
+    min-height: 34px;
+  }
+
+  .topbar .brand-mark {
+    width: 32px;
+    height: 32px;
+  }
+
+  .topbar .brand-name {
+    font-size: 17px;
+  }
+
+  .topbar .brand-meta {
+    margin-left: 5px;
+    padding-left: 9px;
+    gap: 3px;
+    font-size: 7px;
+  }
+
+  .topbar .brand-chip {
+    font-size: 6.5px;
+    letter-spacing: 0.08em;
+  }
+
+  .topbar .top-actions {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 1px 1px 6px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .topbar .top-actions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .topbar .top-button {
+    min-height: 34px;
+    height: 34px;
+    white-space: nowrap;
+  }
+
+  body.is-header-compact .topbar {
+    gap: 4px;
+    padding: calc(6px + var(--safe-top)) 10px 0;
+  }
+
+  body.is-header-compact .topbar .brand-mark {
+    width: 27px;
+    height: 27px;
+  }
+
+  body.is-header-compact .topbar .brand-name {
+    font-size: 15px;
+  }
+
+  body.is-header-compact .topbar .top-actions {
+    padding-bottom: 3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topbar,
+  .topbar .top-button {
+    transition: none !important;
+  }
+}
