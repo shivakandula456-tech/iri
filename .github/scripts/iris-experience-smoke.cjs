@@ -66,7 +66,7 @@ const assert = (condition, message) => {
     liftPage.on('console', (message) => {
       if (message.type() === 'error') liftPageErrors.push('console: ' + message.text());
     });
-    assert(liftPage.url().includes('view=lift-placement'), 'lift link navigates to the viewer route');
+    assert(new URL(liftPage.url()).pathname.endsWith('/lift-placement.html'), 'lift link opens the dedicated standalone viewer page');
     await liftPage.waitForFunction(() => {
       const root = document.getElementById('irisLiftViewer');
       return Boolean(window.__IRIS_LIFT_VIEWER__?.ready || root?.dataset.state === 'error');

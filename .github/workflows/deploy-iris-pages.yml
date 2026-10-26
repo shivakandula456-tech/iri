@@ -58,7 +58,7 @@ jobs:
           duplicates = sorted(key for key, count in Counter(parser.ids).items() if count > 1)
           if duplicates:
               raise SystemExit('Duplicate HTML ids: ' + ', '.join(duplicates))
-          required = ['app.js', 'styles.css', 'js/experience-menu.js', 'js/building-explorer.js', 'js/lift-data.js', 'js/lift-placement-viewer.js']
+          required = ['app.js', 'styles.css', 'lift-placement.html', 'js/experience-menu.js', 'js/building-explorer.js', 'js/lift-data.js', 'js/lift-placement-viewer.js']
           missing = [path for path in required if not Path(path).is_file()]
           if missing:
               raise SystemExit('Missing required files: ' + ', '.join(missing))
@@ -127,6 +127,7 @@ jobs:
           set -euo pipefail
           site="${DEPLOY_URL%/}/"
           index_file=/tmp/iris-published-index.html
+          lift_page_file=/tmp/iris-published-lift-page.html
           menu_file=/tmp/iris-published-menu.js
           lift_file=/tmp/iris-published-lift-viewer.js
           lift_data_file=/tmp/iris-published-lift-data.js
@@ -140,6 +141,8 @@ jobs:
           done
           test "$published" = true
           grep -q './js/experience-menu.js' "$index_file"
+          curl -fsS "${site}lift-placement.html" -o "$lift_page_file"
+          grep -q './js/lift-placement-viewer.js' "$lift_page_file"
           curl -fsS "${site}js/experience-menu.js" -o "$menu_file"
           grep -q 'Vertical Building Cutaway' "$menu_file"
           grep -q 'Architectural Postcard Studio' "$menu_file"

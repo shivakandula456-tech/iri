@@ -101,4 +101,4 @@ The GitHub Actions workflow now runs repeatable source checks and automated Play
 
 ## Lift Placement Viewer
 
-Open **Explore IRIS → Lift Placement Viewer** to launch a separate browser tab containing the shared 3D vertical cutaway and a schematic 2D floor plan. Initial lift locations, dimensions, door orientation and served-floor pattern are placeholders in `js/lift-data.js`; verify them against approved plans and lift sections before using project-specific dimensions. This is a conceptual visual study and is not for construction.
+Open **Explore IRIS → Lift Placement Viewer** to launch a separate browser tab containing a dedicated 3D vertical cutaway built from the same procedural tower model and a schematic 2D floor plan. Initial lift locations, dimensions, door orientation and served-floor pattern are placeholders in `js/lift-data.js`; verify them against approved plans and lift sections before using project-specific dimensions. This is a conceptual visual study and is not for construction.

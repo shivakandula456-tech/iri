@@ -1,7 +1,12 @@
+import * as THREE from 'three';
+import { OrbitControls } from '../assets/vendor/OrbitControls.js';
+import { createMaterials } from './materials.js';
+import { buildBuilding } from './building.js';
+import { BuildingExplorer } from './building-explorer.js';
 import { BUILDING, HALF_D, HALF_L, ROOF_Y } from './config.js';
 import { LIFT_DATA_NOTICE, LIFT_PLACEMENTS } from './lift-data.js';
 
-if (new URLSearchParams(location.search).get('view') === 'lift-placement') void startViewer();
+void startViewer();
 
 function floorName(n) { return n === 0 ? 'Ground / Lobby' : 'Level ' + String(n).padStart(2,'0'); }
 function floorY(n) { return n === 0 ? BUILDING.groundHeight * 0.5 : BUILDING.groundHeight + (n - 1) * BUILDING.floorHeight + BUILDING.floorHeight * 0.5; }
@@ -108,19 +113,85 @@ function addLiftMeshes(app) {
   app.scene.add(layer);
   return {layer,groups,floorMesh,floorMat};
 }
+function createStandaloneApp() {
+  const canvas = document.getElementById('scene');
+  if (!canvas) throw new Error('Lift viewer canvas is missing.');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+  renderer.setSize(window.innerWidth, window.innerHeight, false);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.08;
+  renderer.localClippingEnabled = true;
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0b1419);
+  scene.fog = new THREE.FogExp2(0x0b1419, 0.0007);
+  const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 1000);
+  const target = new THREE.Vector3(0, ROOF_Y * 0.52, 0);
+  camera.position.set(88, Math.max(ROOF_Y + 18, 68), 116);
+  camera.lookAt(target);
+
+  const controls = new OrbitControls(camera, canvas);
+  controls.target.copy(target);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.075;
+  controls.minDistance = 25;
+  controls.maxDistance = 240;
+  controls.update();
+
+  scene.add(new THREE.HemisphereLight(0xd9e4ec, 0x282b2b, 2.0));
+  const keyLight = new THREE.DirectionalLight(0xffd3a7, 2.6);
+  keyLight.position.set(-70, 135, 92);
+  scene.add(keyLight);
+  const fillLight = new THREE.DirectionalLight(0x8eafc6, 1.05);
+  fillLight.position.set(80, 72, -110);
+  scene.add(fillLight);
+
+  const materials = createMaterials(renderer);
+  const building = buildBuilding(materials);
+  scene.add(building.group);
+  const buildingExplorer = new BuildingExplorer({
+    scene, camera, controls, renderer, building, site: null,
+    onStateChange: () => {},
+    onToast: (message) => {
+      const status = document.getElementById('irisLiftStatus');
+      if (status) status.textContent = message;
+    }
+  });
+  const app = { THREE, scene, camera, renderer, controls, building, buildingExplorer };
+  let lastTime = performance.now();
+  const animate = () => {
+    requestAnimationFrame(animate);
+    const now = performance.now();
+    const dt = Math.min(Math.max((now - lastTime) / 1000, 0), 0.05);
+    lastTime = now;
+    buildingExplorer.update(dt);
+    controls.update();
+    renderer.render(scene, camera);
+  };
+  requestAnimationFrame(animate);
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight, false);
+  });
+  return app;
+}
+
 async function startViewer() {
   document.documentElement.classList.add('lift-view-mode');
   document.title='IRIS Residences · Lift Placement Viewer';
   styles();
   const root=createShell();
   try {
-    const app=await waitFor(()=>window.__IRIS_APP__?.ready?window.__IRIS_APP__:null,60000);
-    if(app.director?.isIntroPlaying)app.skipIntro?.();
-    if(app.director?.isTransitioning)app.director.interrupt();
-    if(!app.buildingExplorer?.active)app.openBuildingExplorer?.();
-    app.setBuildingExplorerMode?.('vertical');
-    await waitFor(()=>app.buildingExplorer?.getState?.().flightActive===false,15000);
-    const target=new app.THREE.Vector3(5.5,ROOF_Y*.51,0);
+    root.dataset.state = 'starting';
+    const app = createStandaloneApp();
+    root.querySelector('#irisLiftStatus').textContent = 'Building the conceptual tower cutaway…';
+    app.buildingExplorer.open();
+    app.buildingExplorer.setMode('vertical');
+    await waitFor(() => app.buildingExplorer.getState().flightActive === false, 8000);
+    const target=new THREE.Vector3(5.5,ROOF_Y*.51,0);
     app.camera.position.set(76,Math.max(ROOF_Y+17,64),116);app.camera.lookAt(target);
     app.controls.target.copy(target);app.controls.enabled=true;app.controls.update();
     const geom=addLiftMeshes(app);

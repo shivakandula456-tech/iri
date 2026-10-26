@@ -129,7 +129,7 @@ const grid = byId('irisExperienceGrid');
 for (const feature of FEATURES) {
   const button = document.createElement(feature.id === 'lifts' ? 'a' : 'button');
   if (feature.id === 'lifts') {
-    button.href = new URL('./index.html?view=lift-placement', window.location.href).href;
+    button.href = new URL('./lift-placement.html', window.location.href).href;
     button.target = '_blank';
     button.rel = 'noopener noreferrer';
     button.setAttribute('aria-label', 'Open Lift Placement Viewer in a new browser tab');
