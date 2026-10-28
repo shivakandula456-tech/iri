@@ -30,6 +30,7 @@ import { BuildingExplorer } from './js/building-explorer.js';
 import { FreeLookController } from './js/free-look.js';
 import { QualityController } from './js/quality.js';
 import { disposeSceneResources } from './js/utils.js';
+import { Flat501Experience } from './js/flat501-experience.js';
 
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => resolve()));
@@ -48,6 +49,7 @@ let lightingController;
 let facadeInspector;
 let blueprintController;
 let buildingExplorer;
+let flat501Experience;
 let site;
 let arSession = null;
 let arHitTestSource = null;
@@ -878,6 +880,9 @@ function bindEvents() {
 
 function animate(timestamp, xrFrame) {
   if (disposed) return;
+  // Flat 501 owns a focused reference viewer while open. Pause the exterior
+  // render loop to avoid drawing two scenes every frame on the same device.
+  if (flat501Experience?.active) return;
   const rawDt = clock.getDelta();
   const dt = Math.min(rawDt, 0.05);
   const presentingAR = Boolean(renderer?.xr?.isPresenting);
@@ -895,6 +900,11 @@ function animate(timestamp, xrFrame) {
     if (!buildingExplorer?.active) guidedTour?.update(dt, Boolean(director?.isTransitioning));
     if (site && (!buildingExplorer?.active || site.group.visible)) site.update(dt);
   }
+  flat501Experience?.setEnabled(
+    ready && !buildingExplorer?.active && mode !== 'free' && !presentingAR
+      && !director?.isIntroPlaying && !director?.isTransitioning
+  );
+  flat501Experience?.updateMarker();
   renderFrame(dt);
 }
 
@@ -1019,6 +1029,35 @@ async function boot() {
       onToast: (message) => ui.showToast(message)
     });
     buildingExplorer.setInteriorLighting(lightingController.getState().hour);
+    flat501Experience = new Flat501Experience({
+      scene,
+      camera,
+      controls,
+      domElement: renderer.domElement,
+      appElement: document.getElementById('app'),
+      building,
+      onBeforeOpen: () => {
+        if (mode === 'free') setMode('orbit');
+        if (guidedTour?.active) guidedTour.stop({ reason: 'flat-501-reference' });
+        if (facadeInspector?.enabled) {
+          facadeInspector.setEnabled(false);
+          ui.setInspectionState(false);
+          ui.clearFacadeInfo();
+        }
+        if (blueprintController?.enabled) {
+          blueprintController.setEnabled(false);
+          ui.setBlueprintState(false);
+        }
+        if (director?.isIntroPlaying) director.skipIntro();
+        if (director?.isTransitioning) director.interrupt();
+        controls.enabled = false;
+      },
+      onAfterClose: () => {
+        controls.enabled = true;
+        renderFrame(0);
+      },
+      onToast: (message) => ui.showToast(message)
+    });
     bindEvents();
     setupPostProcessing();
     ui.setMode('orbit');
@@ -1066,6 +1105,8 @@ async function boot() {
       facadeInspector,
       blueprintController,
       buildingExplorer,
+      flat501Experience,
+      openFlat501: () => flat501Experience?.open(),
       site,
       building,
       sky,
