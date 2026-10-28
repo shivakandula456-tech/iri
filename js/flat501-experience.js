@@ -5,6 +5,8 @@ const FLAT_REPO_REV = '74ca0000fcc5244566e2400dfa64fc897a51ac4e';
 const FLAT_CDN = 'https://cdn.jsdelivr.net/gh/shivakandula456-tech/flat@' + FLAT_REPO_REV;
 const VIDEO_URL = FLAT_CDN + '/assets/video/reference-flat-501.mp4';
 const POSTER_URL = FLAT_CDN + '/assets/images/entry-501.jpg';
+const FLAT501_LOCAL_VIEWER = '../assets/flat501/js/viewer3d.js';
+const FLAT501_LOCAL_PROPERTY = '../assets/flat501/js/property-data.js';
 
 const clamp = (value, low, high) => Math.min(high, Math.max(low, value));
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
@@ -263,9 +265,12 @@ export class Flat501Experience {
       this.statusElement.textContent = 'Exploded reference model · Drag to orbit · Scroll to zoom';
       this.shell.querySelector('[data-flat501-action="explode"]').textContent = 'Exploded view';
     } catch (error) {
+      this.viewerError = error;
+      const detail = String(error?.message || error || 'Unknown initialization error').slice(0, 220);
       console.error('Flat 501 reference viewer could not be loaded.', error);
-      this.statusElement.textContent = 'The Flat 501 model could not be loaded. Check the connection and try again.';
-      this.onToast('Flat 501 model failed to load. The IRIS building remains available.');
+      this.statusElement.textContent = 'Flat 501 model failed: ' + detail;
+      this.statusElement.title = detail;
+      this.onToast('Flat 501 model failed to load. Details are shown in the status panel. The IRIS building remains available.');
     }
   }
 
@@ -277,8 +282,8 @@ export class Flat501Experience {
     this.viewerLoading = true;
     try {
       const [{ DigitalTwinViewer }, { PROPERTY }] = await Promise.all([
-        import(FLAT_CDN + '/js/viewer3d.js'),
-        import(FLAT_CDN + '/js/property-data.js')
+        import(FLAT501_LOCAL_VIEWER),
+        import(FLAT501_LOCAL_PROPERTY)
       ]);
       if (!this.active) return;
       this.viewer = new DigitalTwinViewer(this.viewerContainer, {
