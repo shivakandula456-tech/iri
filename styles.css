@@ -2777,7 +2777,7 @@ html, body {
   }
 
   .topbar .brand {
-    margin-top: 58px;
+    margin-top: 0;
   }
 }
 
@@ -2799,7 +2799,7 @@ html, body {
   }
 
   .topbar .brand {
-    margin-top: 44px;
+    margin-top: 0;
   }
 }
 
@@ -2811,7 +2811,7 @@ html, body {
   }
 
   .topbar .brand {
-    margin-top: 44px;
+    margin-top: 0;
   }
 }
 
