@@ -72,7 +72,7 @@ export class Flat501Experience {
       opacity: 0.12,
       depthWrite: false,
       side: THREE.DoubleSide,
-      depthTest: false
+      depthTest: true
     });
     this.targetPanel = new THREE.Mesh(new THREE.BoxGeometry(5.65, 2.5, 0.12), panelMaterial);
     this.targetPanel.name = 'Flat 501 selectable facade bay';
@@ -82,7 +82,7 @@ export class Flat501Experience {
       color: 0xe7c995,
       transparent: true,
       opacity: 0.98,
-      depthTest: false,
+      depthTest: true,
       linewidth: 1
     });
     this.targetOutline = new THREE.LineSegments(
@@ -119,6 +119,7 @@ export class Flat501Experience {
     this.shell = document.createElement('section');
     this.shell.className = 'flat501-overlay';
     this.shell.hidden = true;
+    this.shell.setAttribute('role', 'dialog');
     this.shell.setAttribute('aria-label', 'Flat 501 reference interior experience');
     this.shell.setAttribute('aria-modal', 'true');
     this.shell.innerHTML = [
@@ -387,6 +388,9 @@ export class Flat501Experience {
     if (action === 'explode') {
       this.setExploded(!this.exploded);
       this.shell.querySelector('[data-flat501-action="explode"]').textContent = this.exploded ? 'Reassemble' : 'Exploded view';
+      this.statusElement.textContent = this.exploded
+        ? 'Exploded reference model · Drag to orbit · Scroll to zoom'
+        : 'Reassembled cutaway · Drag to orbit · Scroll to zoom';
       return;
     }
     if (action === 'cutaway' || action === 'interior' || action === 'plan') {
