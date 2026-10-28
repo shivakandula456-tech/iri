@@ -3,9 +3,8 @@ import { BUILDING, HALF_D } from './config.js';
 
 const FLAT_REPO_REV = '74ca0000fcc5244566e2400dfa64fc897a51ac4e';
 const FLAT_CDN = 'https://cdn.jsdelivr.net/gh/shivakandula456-tech/flat@' + FLAT_REPO_REV;
-const FLAT_RAW = 'https://raw.githubusercontent.com/shivakandula456-tech/flat/' + FLAT_REPO_REV;
-const VIDEO_URL = FLAT_RAW + '/assets/video/reference-flat-501.mp4';
-const POSTER_URL = FLAT_RAW + '/assets/images/entry-501.jpg';
+const VIDEO_URL = FLAT_CDN + '/assets/video/reference-flat-501.mp4';
+const POSTER_URL = FLAT_CDN + '/assets/images/entry-501.jpg';
 
 const clamp = (value, low, high) => Math.min(high, Math.max(low, value));
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
